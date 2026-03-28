@@ -8,21 +8,21 @@ const T = {
 // ── MOCK DATA ──────────────────────────────────────────────────────────────
 
 const MARKETS = [
-  { marketId:'0x1a2', title:'Will Bitcoin reach $150k by Dec 2026?', categories:['Crypto'], currentPrices:[0.42,0.58], options:['Yes','No'], liquidity:2450000, volume24h:187000, endDate:'2026-12-31', active:true, resolved:false },
-  { marketId:'0x2b3', title:'Will the Fed cut rates in Q2 2026?', categories:['Finance'], currentPrices:[0.68,0.32], options:['Yes','No'], liquidity:1820000, volume24h:94000, endDate:'2026-06-30', active:true, resolved:false },
-  { marketId:'0x3c4', title:'Will SpaceX land on Mars by 2030?', categories:['Science'], currentPrices:[0.28,0.72], options:['Yes','No'], liquidity:890000, volume24h:45000, endDate:'2030-12-31', active:true, resolved:false },
-  { marketId:'0x4d5', title:'Will AI reach AGI by end of 2027?', categories:['Technology'], currentPrices:[0.15,0.85], options:['Yes','No'], liquidity:3200000, volume24h:220000, endDate:'2027-12-31', active:true, resolved:false },
-  { marketId:'0x5e6', title:'Will Ethereum ETF surpass Bitcoin ETF in AUM?', categories:['Crypto'], currentPrices:[0.35,0.65], options:['Yes','No'], liquidity:1100000, volume24h:78000, endDate:'2026-12-31', active:true, resolved:false },
-  { marketId:'0x6f7', title:'Will US enter recession in 2026?', categories:['Finance'], currentPrices:[0.44,0.56], options:['Yes','No'], liquidity:2100000, volume24h:156000, endDate:'2026-12-31', active:true, resolved:false },
+  { marketId:'0x1a2', title:'Will Bitcoin reach $150k by Dec 2026?', categories:['Crypto'], currentPrices:[0.42,0.58], options:['Yes','No'], liquidity:2450000, volume24h:187000, endDate:'2026-12-31', active:true, resolved:false, polymarketUrl:'https://polymarket.com/event/will-bitcoin-reach-150k-by-dec-2026' },
+  { marketId:'0x2b3', title:'Will the Fed cut rates in Q2 2026?', categories:['Finance'], currentPrices:[0.68,0.32], options:['Yes','No'], liquidity:1820000, volume24h:94000, endDate:'2026-06-30', active:true, resolved:false, polymarketUrl:'https://polymarket.com/event/will-the-fed-cut-rates-in-q2-2026' },
+  { marketId:'0x3c4', title:'Will SpaceX land on Mars by 2030?', categories:['Science'], currentPrices:[0.28,0.72], options:['Yes','No'], liquidity:890000, volume24h:45000, endDate:'2030-12-31', active:true, resolved:false, polymarketUrl:'https://polymarket.com/event/will-spacex-land-on-mars-by-2030' },
+  { marketId:'0x4d5', title:'Will AI reach AGI by end of 2027?', categories:['Technology'], currentPrices:[0.15,0.85], options:['Yes','No'], liquidity:3200000, volume24h:220000, endDate:'2027-12-31', active:true, resolved:false, polymarketUrl:'https://polymarket.com/event/will-ai-reach-agi-by-end-of-2027' },
+  { marketId:'0x5e6', title:'Will Ethereum ETF surpass Bitcoin ETF in AUM?', categories:['Crypto'], currentPrices:[0.35,0.65], options:['Yes','No'], liquidity:1100000, volume24h:78000, endDate:'2026-12-31', active:true, resolved:false, polymarketUrl:'https://polymarket.com/event/will-ethereum-etf-surpass-bitcoin-etf' },
+  { marketId:'0x6f7', title:'Will US enter recession in 2026?', categories:['Finance'], currentPrices:[0.44,0.56], options:['Yes','No'], liquidity:2100000, volume24h:156000, endDate:'2026-12-31', active:true, resolved:false, polymarketUrl:'https://polymarket.com/event/will-us-enter-recession-in-2026' },
 ]
 
 const PREDICTIONS = [
-  { id:'p001', marketId:'0x1a2', marketTitle:'Will Bitcoin reach $150k by Dec 2026?', status:'approved', marketProbability:42, aiProbability:38, confidence:'high', timeframe:'monthly' },
-  { id:'p002', marketId:'0x2b3', marketTitle:'Will the Fed cut rates in Q2 2026?', status:'approved', marketProbability:68, aiProbability:72, confidence:'high', timeframe:'weekly' },
-  { id:'p003', marketId:'0x3c4', marketTitle:'Will SpaceX land on Mars by 2030?', status:'approved', marketProbability:28, aiProbability:22, confidence:'medium', timeframe:'monthly' },
-  { id:'p004', marketId:'0x4d5', marketTitle:'Will AI reach AGI by end of 2027?', status:'approved', marketProbability:15, aiProbability:18, confidence:'low', timeframe:'monthly' },
-  { id:'p005', marketId:'0x5e6', marketTitle:'Will Ethereum ETF surpass Bitcoin ETF?', status:'pending', marketProbability:35, aiProbability:31, confidence:'medium', timeframe:'weekly' },
-  { id:'p006', marketId:'0x6f7', marketTitle:'Will US enter recession in 2026?', status:'pending', marketProbability:44, aiProbability:49, confidence:'medium', timeframe:'monthly' },
+  { id:'p001', marketId:'0x1a2', marketTitle:'Will Bitcoin reach $150k by Dec 2026?', status:'approved', marketProbability:42, aiProbability:38, confidencePct:78, aiSelection:'No', confidence:'high', timeframe:'monthly', rationale:'On-chain accumulation metrics remain strong, however macro headwinds from elevated interest rates and slowing ETF inflows reduce the probability of a breakout above $150k within this timeframe. The AI favors the downside scenario.' },
+  { id:'p002', marketId:'0x2b3', marketTitle:'Will the Fed cut rates in Q2 2026?', status:'approved', marketProbability:68, aiProbability:72, confidencePct:82, aiSelection:'Yes', confidence:'high', timeframe:'weekly', rationale:'Recent CPI readings have trended below expectations for three consecutive months. Fed futures pricing and FOMC member commentary strongly signal a cut is being prepared, with Q2 as the most probable window.' },
+  { id:'p003', marketId:'0x3c4', marketTitle:'Will SpaceX land on Mars by 2030?', status:'approved', marketProbability:28, aiProbability:22, confidencePct:65, aiSelection:'No', confidence:'medium', timeframe:'monthly', rationale:'While Starship development is progressing, a crewed Mars landing by 2030 requires a sequence of milestones — orbital refueling, life support, and transit — none of which have been demonstrated at scale. Timeline risk is high.' },
+  { id:'p004', marketId:'0x4d5', marketTitle:'Will AI reach AGI by end of 2027?', status:'approved', marketProbability:15, aiProbability:18, confidencePct:58, aiSelection:'No', confidence:'low', timeframe:'monthly', rationale:'Current LLM architectures show scaling improvements but lack the generalized reasoning, embodied learning, and self-directed goal pursuit typically associated with AGI definitions. 2027 is an aggressive timeline given present benchmarks.' },
+  { id:'p005', marketId:'0x5e6', marketTitle:'Will Ethereum ETF surpass Bitcoin ETF?', status:'approved', marketProbability:35, aiProbability:31, confidencePct:61, aiSelection:'No', confidence:'medium', timeframe:'weekly', rationale:'Bitcoin ETF AUM leads by a significant margin with institutional momentum firmly established. Ethereum ETF adoption is growing but at a pace that makes surpassing BTC ETF unlikely without a major catalyst shift.' },
+  { id:'p006', marketId:'0x6f7', marketTitle:'Will US enter recession in 2026?', status:'approved', marketProbability:44, aiProbability:49, confidencePct:64, aiSelection:'Yes', confidence:'medium', timeframe:'monthly', rationale:'Leading indicators including yield curve inversion duration, ISM manufacturing contraction, and consumer credit stress point to elevated recession risk. The AI slightly upgrades the probability above market consensus.' },
 ]
 
 const PERF = {
@@ -155,18 +155,17 @@ function HomePage({ nav }) {
         <Hdr title="Recent AI Predictions" />
         <button onClick={()=>nav('predictions')} style={{ fontSize:12, color:T.blue, background:'none', border:'none', cursor:'pointer', padding:0 }}>All predictions →</button>
       </div>
-      {PREDICTIONS.filter(p=>p.status==='approved').map(p=>(
+      {PREDICTIONS.slice(0,4).map(p=>(
         <div key={p.id} style={{ display:'flex', gap:10, padding:'9px 0', borderBottom:'0.5px solid var(--color-border-tertiary)', alignItems:'center' }}>
           <ConfBadge c={p.confidence} />
           <div style={{ flex:1 }}>
-            <p style={{ margin:0, fontSize:12 }}>{p.marketTitle}</p>
+            <a href={MARKETS.find(m=>m.marketId===p.marketId)?.polymarketUrl||'#'} target="_blank" rel="noopener noreferrer" style={{ textDecoration:'none' }}>
+              <p style={{ margin:0, fontSize:12, color:'var(--color-text-primary)' }}>{p.marketTitle} <span style={{ fontSize:10, color:T.blue }}>↗</span></p>
+            </a>
           </div>
-          <div style={{ textAlign:'right', fontFamily:'var(--font-mono)', fontSize:11 }}>
-            <span style={{ color:T.blue, fontWeight:500 }}>AI {p.aiProbability}%</span>
-            <span style={{ color:'var(--color-text-tertiary)' }}> / mkt {p.marketProbability}%</span>
-            {Math.abs(p.aiProbability-p.marketProbability)>3&&(
-              <span style={{ marginLeft:4, color:T.amber }}>Δ{Math.abs(p.aiProbability-p.marketProbability)}pp</span>
-            )}
+          <div style={{ textAlign:'right', fontFamily:'var(--font-mono)', fontSize:11, display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:15, fontWeight:500, color:p.aiSelection==='Yes'?T.teal:T.red }}>{p.aiSelection}</span>
+            <span style={{ color:T.blue, fontWeight:500 }}>{p.confidencePct}%</span>
           </div>
         </div>
       ))}
@@ -235,12 +234,15 @@ function MarketDetailPage({ marketId, nav }) {
           {m.active&&<Badge color={T.teal} size={10}>● ACTIVE</Badge>}
           <Badge color={T.amber} size={10}>Closes {m.endDate}</Badge>
         </div>
-        <h2 style={{ margin:'0 0 1rem', fontSize:17, fontWeight:500, lineHeight:1.35 }}>{m.title}</h2>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:'1rem' }}>
-          {[['Liquidity',`$${(m.liquidity/1000000).toFixed(2)}M`],['24h Volume',`$${(m.volume24h/1000).toFixed(0)}k`],['Market ID',m.marketId]].map(([l,v])=>(
+        <a href={m.polymarketUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration:'none', color:'inherit' }}>
+          <h2 style={{ margin:'0 0 4px', fontSize:17, fontWeight:500, lineHeight:1.35, cursor:'pointer' }}>{m.title}</h2>
+          <p style={{ margin:'0 0 1rem', fontSize:11, color:T.blue, fontFamily:'var(--font-mono)' }}>View on Polymarket ↗</p>
+        </a>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:'1rem' }}>
+          {[['Liquidity',`$${(m.liquidity/1000000).toFixed(2)}M`],['24h Volume',`$${(m.volume24h/1000).toFixed(0)}k`]].map(([l,v])=>(
             <div key={l}>
               <p style={{ margin:'0 0 1px', fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{l}</p>
-              <p style={{ margin:0, fontSize:13, fontWeight:500, fontFamily:'var(--font-mono)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v}</p>
+              <p style={{ margin:0, fontSize:13, fontWeight:500, fontFamily:'var(--font-mono)' }}>{v}</p>
             </div>
           ))}
         </div>
@@ -262,34 +264,38 @@ function MarketDetailPage({ marketId, nav }) {
             <span style={{ fontSize:11, fontFamily:'var(--font-mono)', textTransform:'uppercase', letterSpacing:'0.08em', color:T.blue }}>AI Prediction Analysis</span>
             <ConfBadge c={pred.confidence} />
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom: delta>3?'1rem':0 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:'1rem' }}>
             <div>
-              <p style={{ margin:'0 0 3px', fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)', textTransform:'uppercase' }}>AI Probability</p>
-              <p style={{ margin:0, fontSize:30, fontWeight:500, fontFamily:'var(--font-mono)', color:T.blue }}>{pred.aiProbability}%</p>
-              <p style={{ margin:'2px 0 0', fontSize:11, color:'var(--color-text-tertiary)' }}>AI-derived YES probability</p>
+              <p style={{ margin:'0 0 3px', fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)', textTransform:'uppercase' }}>AI Selection</p>
+              <p style={{ margin:0, fontSize:28, fontWeight:500, fontFamily:'var(--font-mono)', color:pred.aiSelection==='Yes'?T.teal:T.red }}>{pred.aiSelection}</p>
+              <p style={{ margin:'2px 0 0', fontSize:11, color:'var(--color-text-tertiary)' }}>AI-selected outcome</p>
+            </div>
+            <div>
+              <p style={{ margin:'0 0 3px', fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)', textTransform:'uppercase' }}>AI Confidence</p>
+              <p style={{ margin:0, fontSize:28, fontWeight:500, fontFamily:'var(--font-mono)', color:T.blue }}>{pred.confidencePct}%</p>
+              <p style={{ margin:'2px 0 0', fontSize:11, color:'var(--color-text-tertiary)' }}>confidence level</p>
             </div>
             <div>
               <p style={{ margin:'0 0 3px', fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)', textTransform:'uppercase' }}>Market Consensus</p>
-              <p style={{ margin:0, fontSize:30, fontWeight:500, fontFamily:'var(--font-mono)' }}>{pred.marketProbability}%</p>
-              <p style={{ margin:'2px 0 0', fontSize:11, color:'var(--color-text-tertiary)' }}>implied from current price</p>
+              <p style={{ margin:0, fontSize:28, fontWeight:500, fontFamily:'var(--font-mono)' }}>{pred.marketProbability}%</p>
+              <p style={{ margin:'2px 0 0', fontSize:11, color:'var(--color-text-tertiary)' }}>implied from price</p>
             </div>
           </div>
           {delta>3&&(
-            <div style={{ padding:'9px 12px', background:T.amber+'12', border:`0.5px solid ${T.amber}`, borderRadius:5 }}>
+            <div style={{ padding:'9px 12px', background:T.amber+'12', border:`0.5px solid ${T.amber}`, borderRadius:5, marginBottom:'1rem' }}>
               <p style={{ margin:0, fontSize:12, color:T.amber }}>
                 ◆ AI-market divergence: {delta}pp — AI is {pred.aiProbability>pred.marketProbability?'more bullish':'more bearish'} than market consensus
               </p>
             </div>
           )}
-          <div style={{ marginTop:'1rem', padding:'9px 12px', background:'var(--color-background-secondary)', borderRadius:5 }}>
-            <p style={{ margin:0, fontSize:11, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)' }}>
-              Prediction ID: {pred.id} · Timeframe: {pred.timeframe} · Status: {pred.status.toUpperCase()}
-            </p>
+          <div style={{ padding:'12px 14px', background:'var(--color-background-secondary)', borderRadius:'var(--border-radius-md)', borderLeft:`3px solid ${T.blue}` }}>
+            <p style={{ margin:'0 0 6px', fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)', textTransform:'uppercase', letterSpacing:'0.07em' }}>AI Rationale</p>
+            <p style={{ margin:0, fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.65 }}>{pred.rationale}</p>
           </div>
         </Card>
       ) : (
         <div style={{ padding:'2.5rem', textAlign:'center', border:'0.5px dashed var(--color-border-secondary)', borderRadius:'var(--border-radius-md)' }}>
-          <p style={{ margin:0, fontSize:13, color:'var(--color-text-tertiary)' }}>No approved AI prediction for this market yet.</p>
+          <p style={{ margin:0, fontSize:13, color:'var(--color-text-tertiary)' }}>No AI prediction available for this market yet.</p>
         </div>
       )}
     </div>
@@ -297,18 +303,12 @@ function MarketDetailPage({ marketId, nav }) {
 }
 
 function PredictionsPage() {
-  const [statusFilter, setStatusFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
-  const filtered = PREDICTIONS.filter(p=>
-    (statusFilter==='all'||p.status===statusFilter)&&
-    (timeFilter==='all'||p.timeframe===timeFilter)
-  )
+  const filtered = PREDICTIONS.filter(p=>timeFilter==='all'||p.timeframe===timeFilter)
   return (
     <div>
       <Hdr title="AI Predictions" />
       <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:'1.25rem' }}>
-        {['all','approved','pending'].map(f=><FilterBtn key={f} label={f} active={statusFilter===f} onClick={()=>setStatusFilter(f)} />)}
-        <div style={{ width:'0.5px', background:'var(--color-border-secondary)', margin:'0 4px' }} />
         {['all','daily','weekly','monthly'].map(t=><FilterBtn key={t} label={t} active={timeFilter===t} color={T.purple} onClick={()=>setTimeFilter(t)} />)}
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
@@ -317,20 +317,22 @@ function PredictionsPage() {
             borderRadius:'var(--border-radius-md)', padding:'11px 14px', display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ display:'flex', gap:5, flexDirection:'column', minWidth:65, alignItems:'center' }}>
               <ConfBadge c={p.confidence} />
-              <Badge color={p.status==='approved'?T.teal:T.amber} size={10}>{p.status.toUpperCase()}</Badge>
+              <span style={{ fontSize:18, fontWeight:500, fontFamily:'var(--font-mono)', color:p.aiSelection==='Yes'?T.teal:T.red }}>{p.aiSelection}</span>
             </div>
             <div style={{ flex:1 }}>
-              <p style={{ margin:'0 0 3px', fontSize:13, fontWeight:500 }}>{p.marketTitle}</p>
+              <a href={MARKETS.find(m=>m.marketId===p.marketId)?.polymarketUrl||'#'} target="_blank" rel="noopener noreferrer"
+                style={{ textDecoration:'none' }} onClick={e=>e.stopPropagation()}>
+                <p style={{ margin:'0 0 3px', fontSize:13, fontWeight:500, color:'var(--color-text-primary)' }}>{p.marketTitle} <span style={{ fontSize:10, color:T.blue }}>↗</span></p>
+              </a>
               <div style={{ display:'flex', gap:5 }}>
                 <Badge color={T.purple} size={10}>{p.timeframe}</Badge>
-                <span style={{ fontSize:11, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)' }}>ID: {p.id}</span>
               </div>
             </div>
             <div style={{ textAlign:'right', fontFamily:'var(--font-mono)' }}>
-              <div style={{ fontSize:20, fontWeight:500, color:T.blue }}>{p.aiProbability}%</div>
-              <div style={{ fontSize:11, color:'var(--color-text-tertiary)' }}>mkt {p.marketProbability}%</div>
-              <div style={{ fontSize:11, color:Math.abs(p.aiProbability-p.marketProbability)>5?T.amber:'var(--color-text-tertiary)' }}>
-                {p.aiProbability>p.marketProbability?'▲':'▼'}{Math.abs(p.aiProbability-p.marketProbability)}pp
+              <div style={{ fontSize:20, fontWeight:500, color:T.blue }}>{p.confidencePct}%</div>
+              <div style={{ fontSize:10, color:'var(--color-text-tertiary)', textTransform:'uppercase', letterSpacing:'0.04em' }}>confidence</div>
+              <div style={{ fontSize:11, marginTop:2, color:Math.abs(p.aiProbability-p.marketProbability)>5?T.amber:'var(--color-text-tertiary)' }}>
+                {p.aiProbability>p.marketProbability?'▲':'▼'}{Math.abs(p.aiProbability-p.marketProbability)}pp vs mkt
               </div>
             </div>
           </div>
@@ -416,7 +418,7 @@ function NotificationsPage() {
               </div>
             ):(
               <>
-                <Hdr title="Email Subscription · POST /api/notifications/email/subscribe" />
+                <Hdr title="Email Subscription" />
                 <div style={{ marginBottom:10 }}>
                   <label style={{ display:'block', fontSize:11, color:'var(--color-text-secondary)', marginBottom:3 }}>Email address *</label>
                   <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" style={{ width:'100%', fontSize:13 }} />
@@ -443,12 +445,12 @@ function NotificationsPage() {
       {tab==='push'&&(
         <div style={{ maxWidth:460 }}>
           <Card>
-            <Hdr title="Push Notifications · POST /api/notifications/push/subscribe" />
+            <Hdr title="Push Notifications" />
             <p style={{ margin:'0 0 1rem', fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.6 }}>
               Browser push notifications for real-time prediction alerts. Uses Web Push API with VAPID keys fetched from the backend.
             </p>
-            <div style={{ marginBottom:'1rem', padding:'9px 11px', background:'var(--color-background-secondary)', borderRadius:5, fontSize:11, fontFamily:'var(--font-mono)', color:'var(--color-text-secondary)' }}>
-              GET /api/notifications/push/vapid-public-key → subscribe via PushManager
+            <div style={{ marginBottom:'1rem', padding:'9px 11px', background:'var(--color-background-secondary)', borderRadius:5, fontSize:12, color:'var(--color-text-secondary)' }}>
+              Real-time prediction alerts delivered to your browser. No account required.
             </div>
             <button style={{ width:'100%', padding:'9px', borderRadius:5, fontSize:12,
               background:T.purple+'18', border:`0.5px solid ${T.purple}`, color:T.purple, cursor:'pointer', fontWeight:500, fontFamily:'var(--font-mono)' }}>
@@ -457,7 +459,7 @@ function NotificationsPage() {
           </Card>
           <div style={{ marginTop:'1rem', maxWidth:460 }}>
             <Card>
-              <Hdr title="Unsubscribe · POST /api/notifications/push/unsubscribe" />
+              <Hdr title="Unsubscribe from Push" />
               <input placeholder="Push endpoint URL" style={{ width:'100%', fontSize:13, marginBottom:10 }} />
               <button style={{ padding:'7px 14px', borderRadius:5, fontSize:12,
                 background:T.red+'18', border:`0.5px solid ${T.red}`, color:T.red, cursor:'pointer', fontFamily:'var(--font-mono)' }}>
@@ -471,7 +473,7 @@ function NotificationsPage() {
       {tab==='preferences'&&(
         <div style={{ maxWidth:460 }}>
           <Card>
-            <Hdr title="Update Preferences · PATCH /api/notifications/preferences" />
+            <Hdr title="Update Preferences" />
             <div style={{ marginBottom:10 }}>
               <label style={{ display:'block', fontSize:11, color:'var(--color-text-secondary)', marginBottom:3 }}>Type</label>
               <select value={prefType} onChange={e=>setPrefType(e.target.value)} style={{ width:'100%', fontSize:13 }}>
@@ -1350,10 +1352,7 @@ export default function App() {
 
       {/* Footer */}
       <div style={{ borderTop:'0.5px solid var(--color-border-tertiary)', padding:'10px 0',
-        display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span style={{ fontSize:10, color:'var(--color-text-tertiary)', fontFamily:'var(--font-mono)' }}>
-          POLYSCOPE API · https://polyscope.onrender.com/api
-        </span>
+        display:'flex', justifyContent:'flex-end', alignItems:'center' }}>
         <div style={{ display:'flex', gap:6 }}>
           <Badge color={T.teal} size={10}>● LIVE</Badge>
           <Badge color={T.blue} size={10}>v1.0.0</Badge>
