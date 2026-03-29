@@ -1,0 +1,334 @@
+import { useState, useEffect } from 'react';
+import { adminAPI, ApiError } from '../api/client';
+import './AdminPage.css';
+
+export default function AdminPage({ adminAuth, showToast }) {
+  const [tab, setTab] = useState('pending'); // 'pending', 'dashboard', 'approved'
+  const [predictions, setPredictions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editProbability, setEditProbability] = useState('');
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    if (tab === 'pending' || tab === 'approved') {
+      fetchPredictions(tab);
+    } else if (tab === 'dashboard') {
+      fetchDashboardStats();
+    }
+  }, [tab]);
+
+  const fetchPredictions = async (status) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await adminAPI.getPredictionsForModeration(status, 100, 0, adminAuth);
+      setPredictions(data.predictions || []);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(`Unable to load ${status} predictions`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDashboardStats = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await adminAPI.getDashboardStats(adminAuth);
+      setStats(data);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError('Unable to load dashboard stats');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (predictionId) => {
+    try {
+      await adminAPI.approvePrediction(predictionId, 'Approved via dashboard', adminAuth);
+      showToast('Prediction approved', 'success');
+      fetchPredictions(tab);
+    } catch {
+      showToast('Failed to approve prediction', 'error');
+    }
+  };
+
+  const handleReject = async (predictionId) => {
+    try {
+      await adminAPI.rejectPrediction(predictionId, 'Rejected via dashboard', adminAuth);
+      showToast('Prediction rejected', 'success');
+      fetchPredictions(tab);
+    } catch {
+      showToast('Failed to reject prediction', 'error');
+    }
+  };
+
+  const handleEditProbability = async (predictionId) => {
+    if (!editProbability || isNaN(editProbability)) {
+      showToast('Enter valid probability', 'error');
+      return;
+    }
+
+    try {
+      await adminAPI.editPredictionProbability(predictionId, parseFloat(editProbability), adminAuth);
+      showToast('Probability updated', 'success');
+      setEditingId(null);
+      setEditProbability('');
+      fetchPredictions(tab);
+    } catch {
+      showToast('Failed to update probability', 'error');
+    }
+  };
+
+  const handleDelete = async (predictionId) => {
+    const confirmed = window.confirm('Delete this prediction permanently? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      if (tab === 'pending') {
+        await adminAPI.deletePendingPrediction(predictionId, adminAuth);
+      } else {
+        await adminAPI.deleteApprovedPrediction(predictionId, adminAuth);
+      }
+      showToast('Prediction deleted', 'success');
+      fetchPredictions(tab);
+    } catch {
+      showToast('Failed to delete prediction', 'error');
+    }
+  };
+
+  return (
+    <div className="admin-page">
+      <div className="admin-header">
+        <h2>Admin Dashboard</h2>
+        <div className="admin-tabs">
+          <button
+            className={`admin-tab ${tab === 'pending' ? 'active' : ''}`}
+            onClick={() => setTab('pending')}
+          >
+            Pending ({predictions.length})
+          </button>
+          <button
+            className={`admin-tab ${tab === 'approved' ? 'active' : ''}`}
+            onClick={() => setTab('approved')}
+          >
+            Approved
+          </button>
+          <button
+            className={`admin-tab ${tab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setTab('dashboard')}
+          >
+            Dashboard
+          </button>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="loading">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
+
+      {error && (
+        <div className="error-container">
+          <h4>Error</h4>
+          <p>{error}</p>
+          <button className="error-retry-button" onClick={() => {
+            if (tab === 'dashboard') {
+              fetchDashboardStats();
+            } else {
+              fetchPredictions(tab);
+            }
+          }}>
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {!loading && tab === 'dashboard' && stats && (
+        <AdminDashboard stats={stats} />
+      )}
+
+      {!loading && (tab === 'pending' || tab === 'approved') && predictions.length === 0 && (
+        <div className="empty-state">
+          <h3>No {tab} predictions</h3>
+          <p>Check back later</p>
+        </div>
+      )}
+
+      {!loading && predictions.length > 0 && (
+        <div className="admin-predictions">
+          {predictions.map((pred) => {
+            const predictionId = pred._id || pred.id;
+            return (
+            <div key={predictionId} className="admin-prediction-card">
+              <div className="card-header">
+                <h3>{pred.marketTitle || 'Market'}</h3>
+                <span className="pred-status" data-status={pred.status}>
+                  {pred.status?.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="card-body">
+                <div className="pred-detail">
+                  <span className="label">Option:</span>
+                  <span>{pred.option}</span>
+                </div>
+                <div className="pred-detail">
+                  <span className="label">Timeframe:</span>
+                  <span>{pred.timeframe}</span>
+                </div>
+                <div className="pred-detail">
+                  <span className="label">Market Probability:</span>
+                  <span>{pred.marketProbabilityAtTime}%</span>
+                </div>
+                <div className="pred-detail">
+                  <span className="label">AI Probability:</span>
+                  <span>{pred.aiProbability}%</span>
+                </div>
+                <div className="pred-detail">
+                  <span className="label">Confidence:</span>
+                  <span>{pred.confidence || 'N/A'}</span>
+                </div>
+
+                {pred.reason && (
+                  <div className="pred-reason">
+                    <span className="label">Reason:</span>
+                    <p>{pred.reason}</p>
+                  </div>
+                )}
+
+                {tab === 'approved' && (
+                  <div className="edit-probability">
+                    <label>Edit AI Probability:</label>
+                    {editingId === predictionId ? (
+                      <div className="edit-form">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={editProbability}
+                          onChange={(e) => setEditProbability(e.target.value)}
+                          placeholder="0-100"
+                        />
+                        <button
+                          onClick={() => handleEditProbability(predictionId)}
+                          className="btn-save"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditProbability('');
+                          }}
+                          className="btn-cancel"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingId(predictionId);
+                          setEditProbability(String(pred.aiProbability ?? ''));
+                        }}
+                        className="btn-edit"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {tab === 'pending' && (
+                <div className="card-footer">
+                  <button
+                    className="btn-approve"
+                    onClick={() => handleApprove(predictionId)}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="btn-reject"
+                    onClick={() => handleReject(predictionId)}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDelete(predictionId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+
+              {tab === 'approved' && (
+                <div className="card-footer">
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDelete(predictionId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminDashboard({ stats }) {
+  return (
+    <div className="admin-dashboard">
+      <div className="dashboard-grid">
+        <div className="dashboard-card">
+          <h4>Database Status</h4>
+          <p className="status-item">
+            {stats.database.connected ? 'Connected' : 'Disconnected'} {stats.database.name ? `(${stats.database.name})` : ''}
+          </p>
+        </div>
+
+        <div className="dashboard-card">
+          <h4>LLM Configuration</h4>
+          <p className="status-item">
+            {stats.services.llm.configured ? 'Configured' : 'Not configured'} ({stats.services.llm.model || 'N/A'})
+          </p>
+        </div>
+
+        <div className="dashboard-card">
+          <h4>Cache Statistics</h4>
+          <p className="stat-value">{stats.cache?.memory?.keys ?? 0} memory keys</p>
+          <p className="stat-detail">{stats.cache?.database?.active ?? 0} database active</p>
+        </div>
+
+        <div className="dashboard-card">
+          <h4>System Uptime</h4>
+          <p className="stat-value">{Math.floor((stats.system.uptime || 0) / 3600)}h {Math.floor(((stats.system.uptime || 0) % 3600) / 60)}m</p>
+        </div>
+      </div>
+
+      <div className="system-info">
+        <h4>Model Counts</h4>
+        <ul>
+          <li>Users: {stats.modelCounts.users}</li>
+          <li>Email Subscriptions: {stats.modelCounts.emailSubscriptions}</li>
+          <li>Push Subscriptions: {stats.modelCounts.pushSubscriptions}</li>
+          <li>Prediction Cache Entries: {stats.modelCounts.predictionCache}</li>
+        </ul>
+      </div>
+    </div>
+  );
+}

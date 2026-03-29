@@ -1,0 +1,228 @@
+/* ── Performance Page ──────────────────────────────────── */
+
+.performance-page {
+  width: 100%;
+}
+
+.performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.performance-header h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.performance-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+.days-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.days-btn {
+  padding: 8px 16px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.days-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.days-btn.active {
+  background: #378ADD;
+  color: white;
+  border-color: #378ADD;
+}
+
+/* ── Performance Stats ─────────────────────────────────── */
+
+.performance-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--color-background-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.stat-huge {
+  font-size: 42px;
+  font-weight: 700;
+  color: #378ADD;
+  margin-bottom: 8px;
+}
+
+.stat-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ── Performance Sections ──────────────────────────────── */
+
+.performance-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.prediction-section {
+  background: var(--color-background-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+}
+
+.prediction-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--color-text-primary);
+}
+
+.prediction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prediction-outcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  gap: 12px;
+}
+
+.prediction-outcome.correct {
+  border-left: 4px solid #3b6d11;
+}
+
+.prediction-outcome.incorrect {
+  border-left: 4px solid #a32d2d;
+}
+
+.prediction-outcome.pending {
+  border-left: 4px solid #854f0b;
+}
+
+.outcome-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.outcome-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.prediction-outcome.correct .outcome-badge {
+  background: rgba(59, 109, 17, 0.1);
+  color: #3b6d11;
+}
+
+.prediction-outcome.incorrect .outcome-badge {
+  background: rgba(163, 45, 45, 0.1);
+  color: #a32d2d;
+}
+
+.prediction-outcome.pending .outcome-badge {
+  background: rgba(133, 79, 11, 0.1);
+  color: #854f0b;
+}
+
+.outcome-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.outcome-info p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.outcome-details {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.outcome-date {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.outcome-link {
+  padding: 6px 12px;
+  background: var(--color-background-info);
+  color: var(--color-text-info);
+  text-decoration: none;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.outcome-link:hover {
+  background: var(--color-text-info);
+  color: white;
+}
+
+.no-results {
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+}
