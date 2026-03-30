@@ -14,7 +14,7 @@ import EmailVerificationPage from './pages/EmailVerificationPage';
 function App() {
   const [currentPage, setCurrentPage] = useState(() => {
     const path = window.location.pathname;
-    if (path === '/verify-email') return 'verify-email';
+    if (path === '/verify-email' || window.location.hash.startsWith('#verify-email')) return 'verify-email';
     if (path === '/admin' || window.location.hash === '#admin') return 'admin';
     return 'markets';
   });
@@ -39,7 +39,7 @@ function App() {
 
   useEffect(() => {
     const syncRouteAccess = () => {
-      if (window.location.pathname === '/verify-email') {
+      if (window.location.pathname === '/verify-email' || window.location.hash.startsWith('#verify-email')) {
         setCurrentPage('verify-email');
         return;
       }

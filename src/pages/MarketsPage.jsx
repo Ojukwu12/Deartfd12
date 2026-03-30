@@ -36,11 +36,29 @@ const parseMaybeArray = (value, fallback = []) => {
   return fallback;
 };
 
+const hasCachedPredictions = (market) => {
+  if (!market?.cachedPredictions || typeof market.cachedPredictions !== 'object') return false;
+  return Object.keys(market.cachedPredictions).length > 0;
+};
+
+const marketHasPrediction = (market) => {
+  const value = market?.hasPrediction;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value > 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n', ''].includes(normalized)) return false;
+  }
+  return hasCachedPredictions(market);
+};
+
 const normalizeMarket = (market) => ({
   ...market,
   options: parseMaybeArray(market?.options, ['Yes', 'No']),
   categories: parseMaybeArray(market?.categories, []),
-  currentPrices: parseMaybeArray(market?.currentPrices, [])
+  currentPrices: parseMaybeArray(market?.currentPrices, []),
+  hasPrediction: marketHasPrediction(market)
 });
 
 const extractMarkets = (payload) => {
@@ -255,8 +273,8 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
             </div>
 
             <div className="market-status-row">
-              <span className={`prediction-status ${market.hasPrediction ? 'has' : 'none'}`}>
-                {market.hasPrediction ? 'Prediction available' : 'No prediction yet'}
+              <span className={`prediction-status ${marketHasPrediction(market) ? 'has' : 'none'}`}>
+                {marketHasPrediction(market) ? 'Prediction available' : 'No prediction yet'}
               </span>
             </div>
 
@@ -291,6 +309,20 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
             </div>
 
             <div className="market-footer">
+              {marketHasPrediction(market) && (
+                <button
+                  type="button"
+                  className="prediction-link"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (typeof onOpenPredictionForMarket === 'function') {
+                      onOpenPredictionForMarket(market.marketId);
+                    }
+                  }}
+                >
+                  View Prediction
+                </button>
+              )}
               <span className="polymarket-link">Open market options</span>
             </div>
           </div>
@@ -314,7 +346,7 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
             ) : (
               <>
                 <p className="market-modal-status">
-                  {(selectedMarketDetails?.hasPrediction ?? selectedMarket?.hasPrediction)
+                  {marketHasPrediction(selectedMarketDetails || selectedMarket)
                     ? 'This market has at least one approved prediction.'
                     : 'No approved prediction is currently available for this market.'}
                 </p>
@@ -322,7 +354,7 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
                 {detailError && <p className="market-modal-error">{detailError}</p>}
 
                 <div className="market-modal-actions">
-                  {(selectedMarketDetails?.hasPrediction ?? selectedMarket?.hasPrediction) && (
+                  {marketHasPrediction(selectedMarketDetails || selectedMarket) && (
                     <button
                       type="button"
                       className="modal-action prediction"

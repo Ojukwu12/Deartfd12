@@ -6,9 +6,25 @@ export default function EmailVerificationPage({ showToast }) {
   const [status, setStatus] = useState('verifying');
   const [message, setMessage] = useState('Verifying your email...');
 
+  const resolveToken = () => {
+    const fromQuery = new URLSearchParams(window.location.search).get('token');
+    if (fromQuery) return fromQuery;
+
+    const hash = window.location.hash || '';
+    if (hash.startsWith('#verify-email')) {
+      const queryIndex = hash.indexOf('?');
+      if (queryIndex >= 0) {
+        const hashQuery = hash.slice(queryIndex + 1);
+        return new URLSearchParams(hashQuery).get('token');
+      }
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     const verify = async () => {
-      const token = new URLSearchParams(window.location.search).get('token');
+      const token = resolveToken();
 
       if (!token) {
         setStatus('error');
