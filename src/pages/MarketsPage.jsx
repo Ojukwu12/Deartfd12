@@ -35,6 +35,16 @@ const extractMarkets = (payload) => {
   return [];
 };
 
+const formatOptionPrice = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 'N/A';
+
+  const percent = numeric <= 1 ? numeric * 100 : numeric;
+  if (!Number.isFinite(percent)) return 'N/A';
+
+  return `${percent.toFixed(0)}%`;
+};
+
 export default function MarketsPage() {
   const [markets, setMarkets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -263,9 +273,7 @@ export default function MarketsPage() {
               {market.options?.map((opt, idx) => (
                 <div key={idx} className="option-row">
                   <span className="option-name">{opt}</span>
-                  <span className="option-price">
-                    {(market.currentPrices?.[idx] * 100).toFixed(0)}%
-                  </span>
+                  <span className="option-price">{formatOptionPrice(market.currentPrices?.[idx])}</span>
                 </div>
               ))}
             </div>

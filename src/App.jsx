@@ -132,9 +132,11 @@ function AdminLoginPage({ setAdminAuth, showToast, setCurrentPage }) {
   const [adminKey, setAdminKey] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginError('');
     setLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_URL || 'https://polyscope.onrender.com';
@@ -145,15 +147,26 @@ function AdminLoginPage({ setAdminAuth, showToast, setCurrentPage }) {
         }
       });
 
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
+
       if (response.ok) {
         setAdminAuth({ adminKey, apiKey });
         showToast('Admin access granted', 'success');
         setCurrentPage('admin');
       } else {
-        showToast('Invalid admin credentials', 'error');
+        const serverMessage = payload?.message || payload?.error || 'Invalid admin credentials';
+        setLoginError(serverMessage);
+        showToast(serverMessage, 'error');
       }
     } catch {
-      showToast('Unable to verify admin credentials', 'error');
+      const message = 'Unable to verify admin credentials';
+      setLoginError(message);
+      showToast(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -184,7 +197,9 @@ function AdminLoginPage({ setAdminAuth, showToast, setCurrentPage }) {
             {loading ? 'Verifying...' : 'Login'}
           </button>
         </form>
+        {loginError && <p className="admin-login-hint">{loginError}</p>}
         <p className="admin-login-hint">Enter both credentials required by backend admin routes</p>
+        <p className="admin-login-hint">Use `ADMIN_SECRET_KEY` as x-admin-key and `ADMIN_API_KEY` as X-API-Key from backend env.</p>
       </div>
     </div>
   );
