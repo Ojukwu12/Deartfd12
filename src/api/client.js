@@ -174,6 +174,12 @@ export const adminAPI = {
   
   getPredictionStats: (auth) =>
     apiClient.get('/api/admin/stats/predictions', auth),
+
+  getNotificationStats: (auth) =>
+    apiClient.get('/api/admin/stats/notifications', auth),
+
+  cleanupSubscriptions: (auth) =>
+    apiClient.post('/api/admin/cleanup/subscriptions', {}, auth),
   
   getDashboardStats: (auth) =>
     apiClient.get('/api/admin/debug', auth)

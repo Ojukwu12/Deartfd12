@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { marketsAPI, ApiError } from '../api/client';
+import { marketsAPI, predictionsAPI, ApiError } from '../api/client';
 import './MarketsPage.css';
 
 const getPolymarketUrl = (market) => {
   if (market?.polymarketUrl) return market.polymarketUrl;
+  if (market?.eventSlug) return `https://polymarket.com/event/${encodeURIComponent(market.eventSlug)}`;
   if (market?.slug) return `https://polymarket.com/event/${encodeURIComponent(market.slug)}`;
-  return `https://polymarket.com/market/${encodeURIComponent(market?.marketId || '')}`;
+  return `https://polymarket.com/market/${encodeURIComponent(market?.marketId || market?.conditionId || '')}`;
 };
 
 const parseMaybeArray = (value, fallback = []) => {
@@ -93,6 +94,7 @@ const formatOptionPrice = (value) => {
 
 export default function MarketsPage({ onOpenPredictionForMarket }) {
   const [markets, setMarkets] = useState([]);
+  const [predictionMarketIds, setPredictionMarketIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,11 +115,39 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
       let data;
       if (viewMode === 'trending') {
         data = await marketsAPI.getTrendingMarkets(50);
-        setMarkets(extractMarkets(data).map(normalizeMarket));
       } else {
         data = await marketsAPI.getMarkets(50, 0);
-        setMarkets(extractMarkets(data).map(normalizeMarket));
       }
+
+      const normalizedMarkets = extractMarkets(data).map(normalizeMarket);
+
+      // Backend now enriches hasPrediction, but this fallback covers temporary sync/index delays.
+      let fallbackIds = new Set();
+      try {
+        const predictionData = await predictionsAPI.getApprovedPredictions(500, 0, null);
+        const predictions = predictionData?.predictions || [];
+        fallbackIds = new Set(
+          predictions
+            .map((prediction) => String(prediction.marketId || prediction.conditionId || '').trim())
+            .filter(Boolean)
+        );
+        setPredictionMarketIds(fallbackIds);
+      } catch {
+        // Ignore fallback fetch failures; markets should still render from primary response.
+      }
+
+      setMarkets(
+        normalizedMarkets.map((market) => {
+          const marketId = String(market.marketId || '').trim();
+          const conditionId = String(market.conditionId || '').trim();
+          const inferredHasPrediction = fallbackIds.has(marketId) || fallbackIds.has(conditionId);
+
+          return {
+            ...market,
+            hasPrediction: marketHasPrediction(market) || inferredHasPrediction
+          };
+        })
+      );
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Unable to load markets. Please try again.');
@@ -140,7 +170,20 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
     setError(null);
     try {
       const data = await marketsAPI.searchMarkets(searchQuery);
-      setMarkets(extractMarkets(data).map(normalizeMarket));
+      const normalized = extractMarkets(data).map(normalizeMarket);
+      setMarkets(
+        normalized.map((market) => {
+          const marketId = String(market.marketId || '').trim();
+          const conditionId = String(market.conditionId || '').trim();
+          return {
+            ...market,
+            hasPrediction:
+              marketHasPrediction(market) ||
+              predictionMarketIds.has(marketId) ||
+              predictionMarketIds.has(conditionId)
+          };
+        })
+      );
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Search failed. Please try again.');
@@ -316,7 +359,11 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
                   onClick={(event) => {
                     event.stopPropagation();
                     if (typeof onOpenPredictionForMarket === 'function') {
-                      onOpenPredictionForMarket(market.marketId);
+                      onOpenPredictionForMarket({
+                        marketId: market.marketId,
+                        conditionId: market.conditionId,
+                        title: market.title
+                      });
                     }
                   }}
                 >
@@ -360,7 +407,11 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
                       className="modal-action prediction"
                       onClick={() => {
                         if (typeof onOpenPredictionForMarket === 'function') {
-                          onOpenPredictionForMarket(selectedMarket.marketId);
+                          onOpenPredictionForMarket({
+                            marketId: selectedMarket.marketId,
+                            conditionId: selectedMarket.conditionId,
+                            title: selectedMarket.title
+                          });
                           closeMarketActions();
                         }
                       }}

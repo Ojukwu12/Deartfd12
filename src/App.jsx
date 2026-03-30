@@ -79,8 +79,9 @@ function App() {
     }
   };
 
-  const handleOpenPredictionForMarket = (marketId) => {
-    setPredictionJump({ marketId, token: Date.now() });
+  const handleOpenPredictionForMarket = (market) => {
+    const normalized = typeof market === 'string' ? { marketId: market } : (market || {});
+    setPredictionJump({ ...normalized, token: Date.now() });
     setCurrentPage('predictions');
     if (window.location.pathname !== '/' || window.location.hash) {
       window.history.replaceState({}, '', '/');

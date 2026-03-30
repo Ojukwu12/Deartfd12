@@ -10,6 +10,7 @@ export default function AdminPage({ adminAuth, showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [editProbability, setEditProbability] = useState('');
   const [stats, setStats] = useState(null);
+  const [notificationStats, setNotificationStats] = useState(null);
 
   useEffect(() => {
     if (tab === 'pending' || tab === 'approved') {
@@ -38,14 +39,28 @@ export default function AdminPage({ adminAuth, showToast }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminAPI.getDashboardStats(adminAuth);
+      const [data, notifications] = await Promise.all([
+        adminAPI.getDashboardStats(adminAuth),
+        adminAPI.getNotificationStats(adminAuth)
+      ]);
       setStats(data);
+      setNotificationStats(notifications);
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Unable to load dashboard stats');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCleanupSubscriptions = async () => {
+    try {
+      const result = await adminAPI.cleanupSubscriptions(adminAuth);
+      showToast(`Cleanup done: ${result.push ?? 0} push, ${result.email ?? 0} email`, 'success');
+      if (tab === 'dashboard') fetchDashboardStats();
+    } catch {
+      showToast('Failed to clean subscriptions', 'error');
     }
   };
 
@@ -152,7 +167,11 @@ export default function AdminPage({ adminAuth, showToast }) {
       )}
 
       {!loading && tab === 'dashboard' && stats && (
-        <AdminDashboard stats={stats} />
+        <AdminDashboard
+          stats={stats}
+          notificationStats={notificationStats}
+          onCleanupSubscriptions={handleCleanupSubscriptions}
+        />
       )}
 
       {!loading && (tab === 'pending' || tab === 'approved') && predictions.length === 0 && (
@@ -290,7 +309,15 @@ export default function AdminPage({ adminAuth, showToast }) {
   );
 }
 
-function AdminDashboard({ stats }) {
+function AdminDashboard({ stats, notificationStats, onCleanupSubscriptions }) {
+  const emailTotal = notificationStats?.email?.total?.[0]?.count ?? 0;
+  const emailActive = notificationStats?.email?.active?.[0]?.count ?? 0;
+  const emailSent = notificationStats?.email?.totalNotificationsSent?.[0]?.total ?? 0;
+
+  const pushTotal = notificationStats?.push?.total?.[0]?.count ?? 0;
+  const pushActive = notificationStats?.push?.active?.[0]?.count ?? 0;
+  const pushSent = notificationStats?.push?.totalNotificationsSent?.[0]?.total ?? 0;
+
   return (
     <div className="admin-dashboard">
       <div className="dashboard-grid">
@@ -318,6 +345,18 @@ function AdminDashboard({ stats }) {
           <h4>System Uptime</h4>
           <p className="stat-value">{Math.floor((stats.system.uptime || 0) / 3600)}h {Math.floor(((stats.system.uptime || 0) % 3600) / 60)}m</p>
         </div>
+
+        <div className="dashboard-card">
+          <h4>Email Notifications</h4>
+          <p className="stat-value">{emailActive}/{emailTotal} active</p>
+          <p className="stat-detail">{emailSent} total sent</p>
+        </div>
+
+        <div className="dashboard-card">
+          <h4>Push Notifications</h4>
+          <p className="stat-value">{pushActive}/{pushTotal} active</p>
+          <p className="stat-detail">{pushSent} total sent</p>
+        </div>
       </div>
 
       <div className="system-info">
@@ -328,6 +367,11 @@ function AdminDashboard({ stats }) {
           <li>Push Subscriptions: {stats.modelCounts.pushSubscriptions}</li>
           <li>Prediction Cache Entries: {stats.modelCounts.predictionCache}</li>
         </ul>
+      </div>
+
+      <div className="system-info">
+        <h4>Notification Controls</h4>
+        <button className="btn-edit" onClick={onCleanupSubscriptions}>Clean Invalid Subscriptions</button>
       </div>
     </div>
   );

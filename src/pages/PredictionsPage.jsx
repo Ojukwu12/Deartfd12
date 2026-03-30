@@ -16,14 +16,28 @@ export default function PredictionsPage({ showToast, jumpToMarket }) {
   }, [timeframe]);
 
   useEffect(() => {
-    const marketId = jumpToMarket?.marketId;
-    if (!marketId) return;
+    const marketId = String(jumpToMarket?.marketId || '').trim();
+    const conditionId = String(jumpToMarket?.conditionId || '').trim();
+    const marketTitle = String(jumpToMarket?.title || '').trim().toLowerCase();
+    if (!marketId && !conditionId && !marketTitle) return;
 
     const openMatchingPrediction = async () => {
       try {
         const data = await predictionsAPI.getApprovedPredictions(250, 0, null);
         const list = data?.predictions || [];
-        const match = list.find((prediction) => prediction.marketId === marketId);
+        const match = list.find((prediction) => {
+          const predictionMarketId = String(prediction.marketId || '').trim();
+          const predictionConditionId = String(prediction.conditionId || '').trim();
+          const predictionTitle = String(prediction.marketTitle || '').trim().toLowerCase();
+
+          return (
+            (marketId && predictionMarketId === marketId) ||
+            (conditionId && predictionMarketId === conditionId) ||
+            (conditionId && predictionConditionId === conditionId) ||
+            (marketId && predictionConditionId === marketId) ||
+            (marketTitle && predictionTitle && predictionTitle === marketTitle)
+          );
+        });
 
         if (!match) {
           showToast('No approved prediction found for this market yet.', 'info');
