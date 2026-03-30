@@ -28,6 +28,13 @@ const normalizeMarket = (market) => ({
   currentPrices: parseMaybeArray(market?.currentPrices, [])
 });
 
+const extractMarkets = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.markets)) return payload.markets;
+  if (Array.isArray(payload?.data?.markets)) return payload.data.markets;
+  return [];
+};
+
 export default function MarketsPage() {
   const [markets, setMarkets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,10 +58,10 @@ export default function MarketsPage() {
       let data;
       if (viewMode === 'trending') {
         data = await marketsAPI.getTrendingMarkets(50);
-        setMarkets((data.markets || []).map(normalizeMarket));
+        setMarkets(extractMarkets(data).map(normalizeMarket));
       } else {
         data = await marketsAPI.getMarkets(50, 0);
-        setMarkets((data.markets || []).map(normalizeMarket));
+        setMarkets(extractMarkets(data).map(normalizeMarket));
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -78,7 +85,7 @@ export default function MarketsPage() {
     setError(null);
     try {
       const data = await marketsAPI.searchMarkets(searchQuery);
-      setMarkets((data.markets || []).map(normalizeMarket));
+      setMarkets(extractMarkets(data).map(normalizeMarket));
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Search failed. Please try again.');

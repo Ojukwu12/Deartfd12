@@ -1,6 +1,8 @@
 import './Navigation.css';
 
-export default function Navigation({ currentPage, onNavigate, isAdmin }) {
+export default function Navigation({ currentPage, onNavigate, isAdmin, hideAll = false }) {
+  if (hideAll) return null;
+
   return (
     <nav className="navigation">
       <div className="nav-container">

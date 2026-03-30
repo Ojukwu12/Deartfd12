@@ -9,9 +9,16 @@ import PredictionsPage from './pages/PredictionsPage';
 import PerformancePage from './pages/PerformancePage';
 import AdminPage from './pages/AdminPage';
 import NotificationPage from './pages/NotificationPage';
+import EmailVerificationPage from './pages/EmailVerificationPage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('markets');
+  const [currentPage, setCurrentPage] = useState(() => {
+    const path = window.location.pathname;
+    if (path === '/verify-email') return 'verify-email';
+    if (path === '/admin' || window.location.hash === '#admin') return 'admin';
+    return 'markets';
+  });
+
   const [adminAuth, setAdminAuth] = useState(() => {
     const saved = localStorage.getItem('adminAuth');
     if (!saved) return null;
@@ -21,6 +28,7 @@ function App() {
       return null;
     }
   });
+
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -29,8 +37,12 @@ function App() {
   }, [adminAuth]);
 
   useEffect(() => {
-    const onHashAccess = () => {
-      if (window.location.hash === '#admin') {
+    const syncRouteAccess = () => {
+      if (window.location.pathname === '/verify-email') {
+        setCurrentPage('verify-email');
+        return;
+      }
+      if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
         setCurrentPage('admin');
       }
     };
@@ -42,12 +54,14 @@ function App() {
       }
     };
 
-    onHashAccess();
-    window.addEventListener('hashchange', onHashAccess);
+    syncRouteAccess();
+    window.addEventListener('hashchange', syncRouteAccess);
+    window.addEventListener('popstate', syncRouteAccess);
     window.addEventListener('keydown', onSecretShortcut);
 
     return () => {
-      window.removeEventListener('hashchange', onHashAccess);
+      window.removeEventListener('hashchange', syncRouteAccess);
+      window.removeEventListener('popstate', syncRouteAccess);
       window.removeEventListener('keydown', onSecretShortcut);
     };
   }, []);
@@ -59,6 +73,9 @@ function App() {
 
   const handleNavigate = (page) => {
     setCurrentPage(page);
+    if (window.location.pathname !== '/' || window.location.hash) {
+      window.history.replaceState({}, '', '/');
+    }
   };
 
   const renderPage = () => {
@@ -77,22 +94,30 @@ function App() {
         ) : (
           <AdminLoginPage setAdminAuth={setAdminAuth} showToast={showToast} setCurrentPage={handleNavigate} />
         );
+      case 'verify-email':
+        return <EmailVerificationPage showToast={showToast} />;
       default:
         return <MarketsPage />;
     }
   };
 
+  const hideNavigation = currentPage === 'verify-email';
+
   return (
     <ErrorBoundary showToast={showToast}>
       <div className="app">
-        <Header onLogout={() => {
-          setAdminAuth(null);
-          handleNavigate('markets');
-        }} isAdmin={!!adminAuth} />
+        <Header
+          onLogout={() => {
+            setAdminAuth(null);
+            handleNavigate('markets');
+          }}
+          isAdmin={!!adminAuth}
+        />
         <Navigation
           currentPage={currentPage}
           onNavigate={handleNavigate}
           isAdmin={!!adminAuth}
+          hideAll={hideNavigation}
         />
         <main className="app-main">
           {renderPage()}
@@ -112,13 +137,14 @@ function AdminLoginPage({ setAdminAuth, showToast, setCurrentPage }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiBase = import.meta.env.VITE_API_URL || 'https://polyscope.onrender.com';
       const response = await fetch(`${apiBase}/api/admin/debug`, {
         headers: {
           'x-admin-key': adminKey,
           'X-API-Key': apiKey
         }
       });
+
       if (response.ok) {
         setAdminAuth({ adminKey, apiKey });
         showToast('Admin access granted', 'success');
