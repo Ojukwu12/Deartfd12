@@ -14,6 +14,11 @@ export default function MarketsPage() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'trending'
+  const [selectedMarket, setSelectedMarket] = useState(null);
+  const [selectedMarketDetails, setSelectedMarketDetails] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [showPredictionDetails, setShowPredictionDetails] = useState(false);
 
   useEffect(() => {
     fetchMarkets();
@@ -61,6 +66,44 @@ export default function MarketsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openMarketActions = async (market) => {
+    setSelectedMarket(market);
+    setSelectedMarketDetails(null);
+    setDetailError('');
+    setShowPredictionDetails(false);
+    setDetailLoading(true);
+
+    try {
+      const details = await marketsAPI.getMarketById(market.marketId);
+      setSelectedMarketDetails(details);
+    } catch {
+      setDetailError('Could not load market details. You can still open this market on Polymarket.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeMarketActions = () => {
+    setSelectedMarket(null);
+    setSelectedMarketDetails(null);
+    setDetailError('');
+    setDetailLoading(false);
+    setShowPredictionDetails(false);
+  };
+
+  const flattenedPredictions = () => {
+    const source = selectedMarketDetails?.cachedPredictions;
+    if (!source || typeof source !== 'object') return [];
+
+    const rows = [];
+    Object.entries(source).forEach(([option, timeframes]) => {
+      Object.entries(timeframes || {}).forEach(([timeframe, payload]) => {
+        rows.push({ option, timeframe, ...payload });
+      });
+    });
+    return rows;
   };
 
   if (loading) {
@@ -141,13 +184,11 @@ export default function MarketsPage() {
             className="market-card"
             role="button"
             tabIndex={0}
-            onClick={() => {
-              window.open(getPolymarketUrl(market), '_blank', 'noopener,noreferrer');
-            }}
+            onClick={() => openMarketActions(market)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                window.open(getPolymarketUrl(market), '_blank', 'noopener,noreferrer');
+                openMarketActions(market);
               }
             }}
           >
@@ -162,6 +203,12 @@ export default function MarketsPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="market-status-row">
+              <span className={`prediction-status ${market.hasPrediction ? 'has' : 'none'}`}>
+                {market.hasPrediction ? 'Prediction available' : 'No prediction yet'}
+              </span>
             </div>
 
             <p className="market-description">
@@ -197,11 +244,82 @@ export default function MarketsPage() {
             </div>
 
             <div className="market-footer">
-              <span className="polymarket-link">Opens on Polymarket ↗</span>
+              <span className="polymarket-link">Open market options</span>
             </div>
           </div>
         ))}
       </div>
+
+      {selectedMarket && (
+        <div className="market-modal-overlay" onClick={closeMarketActions}>
+          <div className="market-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="market-modal-header">
+              <h3>{selectedMarket.title}</h3>
+              <button className="modal-close" type="button" onClick={closeMarketActions} aria-label="Close market details">
+                ✕
+              </button>
+            </div>
+
+            {detailLoading ? (
+              <div className="market-modal-loading">
+                <div className="loading-spinner"></div>
+              </div>
+            ) : (
+              <>
+                <p className="market-modal-status">
+                  {(selectedMarketDetails?.hasPrediction ?? selectedMarket?.hasPrediction)
+                    ? 'This market has at least one approved prediction.'
+                    : 'No approved prediction is currently available for this market.'}
+                </p>
+
+                {detailError && <p className="market-modal-error">{detailError}</p>}
+
+                <div className="market-modal-actions">
+                  {(selectedMarketDetails?.hasPrediction ?? selectedMarket?.hasPrediction) && (
+                    <button
+                      type="button"
+                      className="modal-action prediction"
+                      onClick={() => setShowPredictionDetails((prev) => !prev)}
+                    >
+                      {showPredictionDetails ? 'Hide Prediction' : 'View Prediction'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="modal-action polymarket"
+                    onClick={() => {
+                      window.open(getPolymarketUrl(selectedMarketDetails || selectedMarket), '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    Go to Polymarket ↗
+                  </button>
+                </div>
+
+                {showPredictionDetails && (
+                  <div className="market-predictions-list">
+                    {flattenedPredictions().length > 0 ? (
+                      flattenedPredictions().map((prediction, index) => (
+                        <div key={`${prediction.option}-${prediction.timeframe}-${index}`} className="market-prediction-item">
+                          <div className="prediction-item-top">
+                            <span>{prediction.option}</span>
+                            <span>{prediction.timeframe}</span>
+                          </div>
+                          <p className="prediction-item-statement">{prediction.statement || 'Prediction insight available.'}</p>
+                          <p className="prediction-item-meta">
+                            Confidence: {prediction.confidenceScore ?? 'N/A'}%
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="market-modal-status">Prediction metadata exists but details are not available yet.</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -163,6 +163,28 @@
   line-height: 1.4;
 }
 
+.market-status-row {
+  margin-bottom: 10px;
+}
+
+.prediction-status {
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 5px 10px;
+}
+
+.prediction-status.has {
+  background: var(--color-background-success);
+  color: var(--color-text-success);
+}
+
+.prediction-status.none {
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+}
+
 /* ── Market Stats ──────────────────────────────────────── */
 
 .market-stats {
@@ -247,4 +269,127 @@
 .polymarket-link:hover {
   background: var(--color-text-info);
   color: white;
+}
+
+.market-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.58);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 40;
+  padding: 16px;
+}
+
+.market-modal {
+  width: min(640px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--color-background-primary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-secondary);
+  padding: 20px;
+}
+
+.market-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.market-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--color-text-primary);
+}
+
+.modal-close {
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+}
+
+.market-modal-status {
+  margin-top: 16px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.market-modal-error {
+  margin-top: 10px;
+  color: #c54f1a;
+  font-size: 13px;
+}
+
+.market-modal-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modal-action {
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-action.prediction {
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.modal-action.polymarket {
+  background: #378ADD;
+  color: white;
+}
+
+.market-predictions-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.market-prediction-item {
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 12px;
+  background: var(--color-background-secondary);
+}
+
+.prediction-item-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+}
+
+.prediction-item-statement {
+  margin: 8px 0 6px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.prediction-item-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.market-modal-loading {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

@@ -28,6 +28,30 @@ function App() {
     else localStorage.removeItem('adminAuth');
   }, [adminAuth]);
 
+  useEffect(() => {
+    const onHashAccess = () => {
+      if (window.location.hash === '#admin') {
+        setCurrentPage('admin');
+      }
+    };
+
+    const onSecretShortcut = (event) => {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        setCurrentPage('admin');
+      }
+    };
+
+    onHashAccess();
+    window.addEventListener('hashchange', onHashAccess);
+    window.addEventListener('keydown', onSecretShortcut);
+
+    return () => {
+      window.removeEventListener('hashchange', onHashAccess);
+      window.removeEventListener('keydown', onSecretShortcut);
+    };
+  }, []);
+
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 5000);

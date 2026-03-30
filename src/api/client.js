@@ -3,7 +3,7 @@
  * All communication with backend API
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://polyscope.onrender.com';
 
 const buildAuthHeaders = (auth = null) => {
   if (!auth) return {};
@@ -23,17 +23,23 @@ class ApiError extends Error {
 }
 
 const handleResponse = async (response) => {
-  const data = await response.json();
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
 
   if (!response.ok) {
     throw new ApiError(
-      data.message || data.error || 'An error occurred',
+      data?.message || data?.error || 'An error occurred',
       response.status,
-      data.errorCode || 'UNKNOWN_ERROR'
+      data?.errorCode || data?.code || 'UNKNOWN_ERROR'
     );
   }
 
-  return data.data;
+  return data?.data ?? null;
 };
 
 export const apiClient = {
@@ -136,8 +142,11 @@ export const notificationsAPI = {
   verifyEmail: (token) =>
     apiClient.get(`/api/notifications/email/verify?token=${token}`),
   
-  unsubscribeEmail: (token) =>
-    apiClient.post('/api/notifications/email/unsubscribe', { token }),
+  unsubscribeEmail: ({ token, email }) =>
+    apiClient.post('/api/notifications/email/unsubscribe', {
+      ...(token ? { token } : {}),
+      ...(email ? { email } : {})
+    }),
   
   unsubscribePush: (endpoint) =>
     apiClient.post('/api/notifications/push/unsubscribe', { endpoint })

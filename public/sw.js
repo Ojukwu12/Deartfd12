@@ -10,7 +10,10 @@ self.addEventListener('push', (event) => {
     icon: '/favicon.svg',
     badge: '/favicon.svg',
     tag: 'polyscope-notification',
-    requireInteraction: true
+    requireInteraction: true,
+    data: data.data || {},
+    actions: data.actions || [],
+    timestamp: data.timestamp || Date.now()
   };
 
   event.waitUntil(
@@ -19,16 +22,17 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
+  const targetUrl = event.notification?.data?.url || '/';
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
       for (let client of clientList) {
-        if (client.url === '/' && 'focus' in client) {
+        if (client.url === targetUrl && 'focus' in client) {
           return client.focus();
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        return clients.openWindow(targetUrl);
       }
     })
   );

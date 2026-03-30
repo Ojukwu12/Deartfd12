@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { notificationsAPI } from '../api/client';
 import './NotificationPage.css';
 
 export default function NotificationPage({ showToast }) {
   const [notificationType, setNotificationType] = useState('push'); // 'push' or 'email'
   const [email, setEmail] = useState('');
-  const [subscribedEmail, setSubscribedEmail] = useState('');
+  const [subscribedEmail, setSubscribedEmail] = useState(() => localStorage.getItem('polyscopeSubscribedEmail') || '');
   const [loading, setLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState('serviceWorker' in navigator);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [pushEndpoint, setPushEndpoint] = useState(() => localStorage.getItem('polyscopePushEndpoint') || '');
+
+  useEffect(() => {
+    if (!pushSupported) return;
+
+    navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((subscription) => {
+        if (subscription?.endpoint) {
+          setPushEndpoint(subscription.endpoint);
+          localStorage.setItem('polyscopePushEndpoint', subscription.endpoint);
+          setSubscriptionStatus((current) => current || 'push-active');
+        }
+      })
+      .catch(() => {
+        // Keep setup silent for users if browser APIs are blocked.
+      });
+  }, [pushSupported]);
 
   const handleEmailSubscribe = async (e) => {
     e.preventDefault();
@@ -25,6 +43,7 @@ export default function NotificationPage({ showToast }) {
       });
       showToast('Check your email to verify subscription', 'success');
       setSubscribedEmail(email);
+      localStorage.setItem('polyscopeSubscribedEmail', email);
       setEmail('');
       setSubscriptionStatus('email-pending');
     } catch (err) {
@@ -48,15 +67,24 @@ export default function NotificationPage({ showToast }) {
 
       // Get VAPID public key from server
       const { publicKey } = await notificationsAPI.getVapidPublicKey();
+      if (!publicKey) {
+        showToast('Push key is unavailable. Please try again later.', 'error');
+        setLoading(false);
+        return;
+      }
 
       // Register service worker
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      const existingRegistration = await navigator.serviceWorker.getRegistration('/');
+      const registration = existingRegistration || await navigator.serviceWorker.register('/sw.js', { scope: '/' });
 
       // Subscribe to push
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      }
 
       // Send subscription to server
       await notificationsAPI.subscribePush(subscription, [], {
@@ -64,13 +92,62 @@ export default function NotificationPage({ showToast }) {
       });
 
       showToast('Push notifications enabled!', 'success');
+      setPushEndpoint(subscription.endpoint || '');
+      if (subscription.endpoint) localStorage.setItem('polyscopePushEndpoint', subscription.endpoint);
       setSubscriptionStatus('push-active');
     } catch (err) {
-      if (err.message.includes('not secure')) {
+      if (err?.message?.toLowerCase()?.includes('not secure')) {
         showToast('Push notifications require HTTPS', 'error');
       } else {
-        showToast('Unable to enable push notifications', 'error');
+        showToast('Unable to enable push notifications. Check browser permission and try again.', 'error');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePushUnsubscribe = async () => {
+    setLoading(true);
+    try {
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      const browserSubscription = registration ? await registration.pushManager.getSubscription() : null;
+      const endpoint = browserSubscription?.endpoint || pushEndpoint;
+
+      if (!endpoint) {
+        showToast('No active push subscription found.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      await notificationsAPI.unsubscribePush(endpoint);
+      if (browserSubscription) await browserSubscription.unsubscribe();
+
+      setPushEndpoint('');
+      localStorage.removeItem('polyscopePushEndpoint');
+      setSubscriptionStatus('push-unsubscribed');
+      showToast('Push notifications disabled.', 'success');
+    } catch {
+      showToast('Unable to disable push notifications right now.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailUnsubscribe = async () => {
+    if (!subscribedEmail) {
+      showToast('No subscribed email found.', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await notificationsAPI.unsubscribeEmail({ email: subscribedEmail });
+      setSubscribedEmail('');
+      localStorage.removeItem('polyscopeSubscribedEmail');
+      setSubscriptionStatus('email-unsubscribed');
+      showToast('Email notifications disabled.', 'success');
+    } catch {
+      showToast('Unable to unsubscribe email right now.', 'error');
     } finally {
       setLoading(false);
     }
@@ -107,6 +184,8 @@ export default function NotificationPage({ showToast }) {
             loading={loading}
             status={subscriptionStatus}
             onSubscribe={handlePushSubscribe}
+            onUnsubscribe={handlePushUnsubscribe}
+            hasActiveEndpoint={!!pushEndpoint}
           />
         )}
 
@@ -118,6 +197,7 @@ export default function NotificationPage({ showToast }) {
             loading={loading}
             status={subscriptionStatus}
             onSubmit={handleEmailSubscribe}
+            onUnsubscribe={handleEmailUnsubscribe}
           />
         )}
       </div>
@@ -135,7 +215,7 @@ export default function NotificationPage({ showToast }) {
   );
 }
 
-function PushNotificationSetup({ supported, loading, status, onSubscribe }) {
+function PushNotificationSetup({ supported, loading, status, onSubscribe, onUnsubscribe, hasActiveEndpoint }) {
   if (!supported) {
     return (
       <div className="notification-setup">
@@ -179,6 +259,16 @@ function PushNotificationSetup({ supported, loading, status, onSubscribe }) {
           {loading ? 'Setting up...' : status === 'push-active' ? 'Enabled' : 'Enable Push Notifications'}
         </button>
 
+        {(status === 'push-active' || hasActiveEndpoint) && (
+          <button
+            className="subscribe-btn secondary"
+            onClick={onUnsubscribe}
+            disabled={loading}
+          >
+            {loading ? 'Updating...' : 'Disable Push Notifications'}
+          </button>
+        )}
+
         <p className="setup-note">
           💡 Tip: Browser notifications appear even when Polyscope is closed
         </p>
@@ -187,7 +277,7 @@ function PushNotificationSetup({ supported, loading, status, onSubscribe }) {
   );
 }
 
-function EmailSubscriptionSetup({ email, subscribedEmail, setEmail, loading, status, onSubmit }) {
+function EmailSubscriptionSetup({ email, subscribedEmail, setEmail, loading, status, onSubmit, onUnsubscribe }) {
   return (
     <div className="notification-setup">
       <div className="setup-card">
@@ -233,6 +323,17 @@ function EmailSubscriptionSetup({ email, subscribedEmail, setEmail, loading, sta
           >
             {loading ? 'Subscribing...' : status === 'email-pending' ? 'Pending Verification' : 'Subscribe to Email Alerts'}
           </button>
+
+          {subscribedEmail && (
+            <button
+              type="button"
+              className="subscribe-btn secondary"
+              onClick={onUnsubscribe}
+              disabled={loading}
+            >
+              {loading ? 'Updating...' : `Unsubscribe ${subscribedEmail}`}
+            </button>
+          )}
         </form>
 
         <p className="setup-note">
