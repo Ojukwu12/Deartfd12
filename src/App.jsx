@@ -30,6 +30,7 @@ function App() {
   });
 
   const [toast, setToast] = useState(null);
+  const [predictionJump, setPredictionJump] = useState(null);
 
   useEffect(() => {
     if (adminAuth) localStorage.setItem('adminAuth', JSON.stringify(adminAuth));
@@ -78,12 +79,20 @@ function App() {
     }
   };
 
+  const handleOpenPredictionForMarket = (marketId) => {
+    setPredictionJump({ marketId, token: Date.now() });
+    setCurrentPage('predictions');
+    if (window.location.pathname !== '/' || window.location.hash) {
+      window.history.replaceState({}, '', '/');
+    }
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'markets':
-        return <MarketsPage />;
+        return <MarketsPage onOpenPredictionForMarket={handleOpenPredictionForMarket} />;
       case 'predictions':
-        return <PredictionsPage showToast={showToast} />;
+        return <PredictionsPage showToast={showToast} jumpToMarket={predictionJump} />;
       case 'performance':
         return <PerformancePage showToast={showToast} />;
       case 'notifications':

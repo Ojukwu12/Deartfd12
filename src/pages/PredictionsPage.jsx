@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { predictionsAPI, ApiError } from '../api/client';
 import './PredictionsPage.css';
 
-export default function PredictionsPage({ showToast }) {
+export default function PredictionsPage({ showToast, jumpToMarket }) {
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,6 +14,35 @@ export default function PredictionsPage({ showToast }) {
   useEffect(() => {
     fetchPredictions();
   }, [timeframe]);
+
+  useEffect(() => {
+    const marketId = jumpToMarket?.marketId;
+    if (!marketId) return;
+
+    const openMatchingPrediction = async () => {
+      try {
+        const data = await predictionsAPI.getApprovedPredictions(250, 0, null);
+        const list = data?.predictions || [];
+        const match = list.find((prediction) => prediction.marketId === marketId);
+
+        if (!match) {
+          showToast('No approved prediction found for this market yet.', 'info');
+          return;
+        }
+
+        const matchedTimeframe = match.timeframe || 'daily';
+        if (matchedTimeframe !== timeframe) {
+          setTimeframe(matchedTimeframe);
+        }
+
+        await openPredictionDetail(match);
+      } catch {
+        showToast('Unable to open the market prediction right now.', 'error');
+      }
+    };
+
+    openMatchingPrediction();
+  }, [jumpToMarket?.token]);
 
   const fetchPredictions = async () => {
     setLoading(true);

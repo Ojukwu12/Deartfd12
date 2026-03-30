@@ -11,10 +11,25 @@ const getPolymarketUrl = (market) => {
 const parseMaybeArray = (value, fallback = []) => {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') {
+    const trimmed = value.trim();
+
     try {
-      const parsed = JSON.parse(value);
+      const parsed = JSON.parse(trimmed);
       return Array.isArray(parsed) ? parsed : fallback;
     } catch {
+      // Support simple comma-separated values from upstream adapters.
+      if (trimmed.includes(',')) {
+        return trimmed
+          .split(',')
+          .map((item) => item.trim().replace(/^"|"$/g, ''))
+          .filter(Boolean);
+      }
+
+      // Support single scalar values by returning a one-item array.
+      if (trimmed.length > 0) {
+        return [trimmed.replace(/^"|"$/g, '')];
+      }
+
       return fallback;
     }
   }
@@ -35,8 +50,21 @@ const extractMarkets = (payload) => {
   return [];
 };
 
+const parseNumericPrice = (value) => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace('%', '');
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed)) return parsed;
+
+    const fallback = parseFloat(normalized);
+    if (Number.isFinite(fallback)) return fallback;
+  }
+  return NaN;
+};
+
 const formatOptionPrice = (value) => {
-  const numeric = Number(value);
+  const numeric = parseNumericPrice(value);
   if (!Number.isFinite(numeric)) return 'N/A';
 
   const percent = numeric <= 1 ? numeric * 100 : numeric;
@@ -45,7 +73,7 @@ const formatOptionPrice = (value) => {
   return `${percent.toFixed(0)}%`;
 };
 
-export default function MarketsPage() {
+export default function MarketsPage({ onOpenPredictionForMarket }) {
   const [markets, setMarkets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,7 +83,6 @@ export default function MarketsPage() {
   const [selectedMarketDetails, setSelectedMarketDetails] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
-  const [showPredictionDetails, setShowPredictionDetails] = useState(false);
 
   useEffect(() => {
     fetchMarkets();
@@ -109,7 +136,6 @@ export default function MarketsPage() {
     setSelectedMarket(market);
     setSelectedMarketDetails(null);
     setDetailError('');
-    setShowPredictionDetails(false);
     setDetailLoading(true);
 
     try {
@@ -127,20 +153,6 @@ export default function MarketsPage() {
     setSelectedMarketDetails(null);
     setDetailError('');
     setDetailLoading(false);
-    setShowPredictionDetails(false);
-  };
-
-  const flattenedPredictions = () => {
-    const source = selectedMarketDetails?.cachedPredictions;
-    if (!source || typeof source !== 'object') return [];
-
-    const rows = [];
-    Object.entries(source).forEach(([option, timeframes]) => {
-      Object.entries(timeframes || {}).forEach(([timeframe, payload]) => {
-        rows.push({ option, timeframe, ...payload });
-      });
-    });
-    return rows;
   };
 
   if (loading) {
@@ -314,9 +326,14 @@ export default function MarketsPage() {
                     <button
                       type="button"
                       className="modal-action prediction"
-                      onClick={() => setShowPredictionDetails((prev) => !prev)}
+                      onClick={() => {
+                        if (typeof onOpenPredictionForMarket === 'function') {
+                          onOpenPredictionForMarket(selectedMarket.marketId);
+                          closeMarketActions();
+                        }
+                      }}
                     >
-                      {showPredictionDetails ? 'Hide Prediction' : 'View Prediction'}
+                      View Prediction
                     </button>
                   )}
                   <button
@@ -329,27 +346,6 @@ export default function MarketsPage() {
                     Go to Polymarket ↗
                   </button>
                 </div>
-
-                {showPredictionDetails && (
-                  <div className="market-predictions-list">
-                    {flattenedPredictions().length > 0 ? (
-                      flattenedPredictions().map((prediction, index) => (
-                        <div key={`${prediction.option}-${prediction.timeframe}-${index}`} className="market-prediction-item">
-                          <div className="prediction-item-top">
-                            <span>{prediction.option}</span>
-                            <span>{prediction.timeframe}</span>
-                          </div>
-                          <p className="prediction-item-statement">{prediction.statement || 'Prediction insight available.'}</p>
-                          <p className="prediction-item-meta">
-                            Confidence: {prediction.confidenceScore ?? 'N/A'}%
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="market-modal-status">Prediction metadata exists but details are not available yet.</p>
-                    )}
-                  </div>
-                )}
               </>
             )}
           </div>
