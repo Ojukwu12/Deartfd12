@@ -8,6 +8,26 @@ const getPolymarketUrl = (market) => {
   return `https://polymarket.com/market/${encodeURIComponent(market?.marketId || '')}`;
 };
 
+const parseMaybeArray = (value, fallback = []) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
+const normalizeMarket = (market) => ({
+  ...market,
+  options: parseMaybeArray(market?.options, ['Yes', 'No']),
+  categories: parseMaybeArray(market?.categories, []),
+  currentPrices: parseMaybeArray(market?.currentPrices, [])
+});
+
 export default function MarketsPage() {
   const [markets, setMarkets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +51,10 @@ export default function MarketsPage() {
       let data;
       if (viewMode === 'trending') {
         data = await marketsAPI.getTrendingMarkets(50);
-        setMarkets(data.markets || []);
+        setMarkets((data.markets || []).map(normalizeMarket));
       } else {
         data = await marketsAPI.getMarkets(50, 0);
-        setMarkets(data.markets || []);
+        setMarkets((data.markets || []).map(normalizeMarket));
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -58,7 +78,7 @@ export default function MarketsPage() {
     setError(null);
     try {
       const data = await marketsAPI.searchMarkets(searchQuery);
-      setMarkets(data.markets || []);
+      setMarkets((data.markets || []).map(normalizeMarket));
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Search failed. Please try again.');
