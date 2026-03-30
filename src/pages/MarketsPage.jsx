@@ -95,6 +95,7 @@ const formatOptionPrice = (value) => {
 export default function MarketsPage({ onOpenPredictionForMarket }) {
   const [markets, setMarkets] = useState([]);
   const [predictionMarketIds, setPredictionMarketIds] = useState(new Set());
+  const [marketDetailsById, setMarketDetailsById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,6 +108,56 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
   useEffect(() => {
     fetchMarkets();
   }, [viewMode]);
+
+  const marketKeys = (market) => {
+    const keys = [
+      String(market?.marketId || '').trim(),
+      String(market?.conditionId || '').trim()
+    ].filter(Boolean);
+    return [...new Set(keys)];
+  };
+
+  const fetchMarketDetailsWithFallback = async (market) => {
+    const keys = marketKeys(market);
+    for (const key of keys) {
+      try {
+        const detail = await marketsAPI.getMarketById(key);
+        return { key, detail };
+      } catch {
+        // Try next key variant.
+      }
+    }
+    return null;
+  };
+
+  const hydrateMarketPredictionSignals = async (marketList) => {
+    const detailEntries = await Promise.all(
+      marketList.map(async (market) => {
+        const found = await fetchMarketDetailsWithFallback(market);
+        if (!found) return null;
+        return [found.key, found.detail];
+      })
+    );
+
+    const detailsMap = detailEntries
+      .filter(Boolean)
+      .reduce((acc, [key, detail]) => ({ ...acc, [key]: detail }), {});
+
+    if (Object.keys(detailsMap).length > 0) {
+      setMarketDetailsById((prev) => ({ ...prev, ...detailsMap }));
+
+      setMarkets((prev) => prev.map((market) => {
+        const keys = marketKeys(market);
+        const detail = keys.map((key) => detailsMap[key]).find(Boolean);
+        const inferredFromDetail = detail ? marketHasPrediction(detail) || hasCachedPredictions(detail) : false;
+
+        return {
+          ...market,
+          hasPrediction: marketHasPrediction(market) || inferredFromDetail
+        };
+      }));
+    }
+  };
 
   const fetchMarkets = async () => {
     setLoading(true);
@@ -148,6 +199,9 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
           };
         })
       );
+
+      // Hydrate hasPrediction from market detail payloads when list-level status is stale.
+      hydrateMarketPredictionSignals(normalizedMarkets);
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Unable to load markets. Please try again.');
@@ -184,6 +238,8 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
           };
         })
       );
+
+      hydrateMarketPredictionSignals(normalized);
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Search failed. Please try again.');
@@ -195,17 +251,23 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
 
   const openMarketActions = async (market) => {
     setSelectedMarket(market);
-    setSelectedMarketDetails(null);
+    const existingDetail = marketKeys(market).map((key) => marketDetailsById[key]).find(Boolean) || null;
+    setSelectedMarketDetails(existingDetail);
     setDetailError('');
-    setDetailLoading(true);
+    setDetailLoading(!existingDetail);
 
-    try {
-      const details = await marketsAPI.getMarketById(market.marketId);
-      setSelectedMarketDetails(details);
-    } catch {
-      setDetailError('Could not load market details. You can still open this market on Polymarket.');
-    } finally {
-      setDetailLoading(false);
+    if (!existingDetail) {
+      try {
+        const found = await fetchMarketDetailsWithFallback(market);
+        if (found?.detail) {
+          setSelectedMarketDetails(found.detail);
+          setMarketDetailsById((prev) => ({ ...prev, [found.key]: found.detail }));
+        } else {
+          setDetailError('Could not load market details. You can still open this market on Polymarket.');
+        }
+      } finally {
+        setDetailLoading(false);
+      }
     }
   };
 
