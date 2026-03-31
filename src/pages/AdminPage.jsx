@@ -52,7 +52,36 @@ export default function AdminPage({ adminAuth, showToast }) {
         data = await adminAPI.getPredictions(status, 100, 0, adminAuth);
       }
 
-      const items = data?.predictions || [];
+      let items = data?.predictions || [];
+
+      // Some deployments may not honor status filtering consistently.
+      // Fallback to all predictions and filter client-side when needed.
+      if (items.length === 0) {
+        try {
+          const allData = await adminAPI.getPredictions(null, 200, 0, adminAuth);
+          const allItems = allData?.predictions || [];
+          const now = Date.now();
+
+          if (status === 'pending') {
+            items = allItems.filter((prediction) => {
+              if (prediction.status === 'pending') return true;
+
+              // Treat approved-but-not-yet-published records as pending-like for moderation visibility.
+              if (prediction.status === 'approved' && prediction.approvedAt) {
+                const publishAt = new Date(prediction.approvedAt).getTime();
+                return Number.isFinite(publishAt) && publishAt > now;
+              }
+
+              return false;
+            });
+          } else {
+            items = allItems.filter((prediction) => prediction.status === status);
+          }
+        } catch {
+          // Keep original items if full-list fallback fails.
+        }
+      }
+
       setPredictions(items);
       setTabCounts((prev) => ({
         ...prev,
@@ -60,7 +89,7 @@ export default function AdminPage({ adminAuth, showToast }) {
       }));
     } catch (err) {
       if (err instanceof ApiError) setError(err.message || `Unable to load ${status} predictions`);
-      else setError(`Unable to load ${status} predictions`);
+      else setError(`Unable to load ${status} predictions. Check backend CORS/admin headers.`);
     } finally {
       setLoading(false);
     }
@@ -205,7 +234,7 @@ export default function AdminPage({ adminAuth, showToast }) {
         />
       )}
 
-      {!loading && (tab === 'pending' || tab === 'approved') && predictions.length === 0 && (
+      {!loading && !error && (tab === 'pending' || tab === 'approved') && predictions.length === 0 && (
         <div className="empty-state">
           <h3>No {tab} predictions</h3>
           <p>Check back later</p>
