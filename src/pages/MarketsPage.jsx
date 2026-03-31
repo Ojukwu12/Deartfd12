@@ -140,7 +140,7 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
   const probePredictionAvailability = async (marketList) => {
     const updates = {};
 
-    for (const market of marketList.slice(0, 30)) {
+    for (const market of marketList) {
       const keys = marketKeys(market);
 
       for (const key of keys) {
@@ -161,9 +161,13 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
       setMarkets((prev) => prev.map((market) => {
         const keys = marketKeys(market);
         const inferred = keys.some((key) => updates[key]);
+        const titleKey = normalizeTitle(market?.title);
         return {
           ...market,
-          hasPrediction: marketHasPrediction(market) || inferred
+          hasPrediction:
+            marketHasPrediction(market) ||
+            inferred ||
+            (titleKey && predictionMarketTitles.has(titleKey))
         };
       }));
     }
