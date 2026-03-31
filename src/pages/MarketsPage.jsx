@@ -95,6 +95,7 @@ const formatOptionPrice = (value) => {
 export default function MarketsPage({ onOpenPredictionForMarket }) {
   const [markets, setMarkets] = useState([]);
   const [predictionMarketIds, setPredictionMarketIds] = useState(new Set());
+  const [predictionMarketTitles, setPredictionMarketTitles] = useState(new Set());
   const [marketDetailsById, setMarketDetailsById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -116,6 +117,12 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
     ].filter(Boolean);
     return [...new Set(keys)];
   };
+
+  const normalizeTitle = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const fetchMarketDetailsWithFallback = async (market) => {
     const keys = marketKeys(market);
@@ -177,15 +184,32 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
 
       // Backend now enriches hasPrediction, but this fallback covers temporary sync/index delays.
       let fallbackIds = new Set();
+      let fallbackTitles = new Set();
       try {
-        const predictionData = await predictionsAPI.getApprovedPredictions(100, 0, null);
-        const predictions = predictionData?.predictions || [];
+        // Scan multiple pages because the target market can be outside the first page.
+        const allPredictions = [];
+        const pageLimit = 100;
+        for (let offset = 0; offset <= 400; offset += pageLimit) {
+          const predictionData = await predictionsAPI.getApprovedPredictions(pageLimit, offset, null);
+          const page = predictionData?.predictions || [];
+          allPredictions.push(...page);
+          if (page.length < pageLimit) break;
+        }
+
         fallbackIds = new Set(
-          predictions
+          allPredictions
             .map((prediction) => String(prediction.marketId || prediction.conditionId || '').trim())
             .filter(Boolean)
         );
+
+        fallbackTitles = new Set(
+          allPredictions
+            .map((prediction) => normalizeTitle(prediction.marketTitle))
+            .filter(Boolean)
+        );
+
         setPredictionMarketIds(fallbackIds);
+        setPredictionMarketTitles(fallbackTitles);
       } catch {
         // Ignore fallback fetch failures; markets should still render from primary response.
       }
@@ -194,7 +218,11 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
         normalizedMarkets.map((market) => {
           const marketId = String(market.marketId || '').trim();
           const conditionId = String(market.conditionId || '').trim();
-          const inferredHasPrediction = fallbackIds.has(marketId) || fallbackIds.has(conditionId);
+          const titleKey = normalizeTitle(market.title);
+          const inferredHasPrediction =
+            fallbackIds.has(marketId) ||
+            fallbackIds.has(conditionId) ||
+            (titleKey && fallbackTitles.has(titleKey));
 
           return {
             ...market,
@@ -232,12 +260,14 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
         normalized.map((market) => {
           const marketId = String(market.marketId || '').trim();
           const conditionId = String(market.conditionId || '').trim();
+          const titleKey = normalizeTitle(market.title);
           return {
             ...market,
             hasPrediction:
               marketHasPrediction(market) ||
               predictionMarketIds.has(marketId) ||
-              predictionMarketIds.has(conditionId)
+              predictionMarketIds.has(conditionId) ||
+              (titleKey && predictionMarketTitles.has(titleKey))
           };
         })
       );
