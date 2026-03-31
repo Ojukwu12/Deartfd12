@@ -130,30 +130,33 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
     return null;
   };
 
-  const hydrateMarketPredictionSignals = async (marketList) => {
-    const detailEntries = await Promise.all(
-      marketList.map(async (market) => {
-        const found = await fetchMarketDetailsWithFallback(market);
-        if (!found) return null;
-        return [found.key, found.detail];
-      })
-    );
+  const probePredictionAvailability = async (marketList) => {
+    const updates = {};
 
-    const detailsMap = detailEntries
-      .filter(Boolean)
-      .reduce((acc, [key, detail]) => ({ ...acc, [key]: detail }), {});
+    for (const market of marketList.slice(0, 30)) {
+      const keys = marketKeys(market);
 
-    if (Object.keys(detailsMap).length > 0) {
-      setMarketDetailsById((prev) => ({ ...prev, ...detailsMap }));
+      for (const key of keys) {
+        try {
+          const response = await predictionsAPI.getApprovedPredictionsForMarket(key, 1, 0);
+          const count = Number(response?.count ?? 0);
+          if (count > 0) {
+            updates[key] = true;
+            break;
+          }
+        } catch {
+          // Ignore probe failures; rely on primary response signals.
+        }
+      }
+    }
 
+    if (Object.keys(updates).length > 0) {
       setMarkets((prev) => prev.map((market) => {
         const keys = marketKeys(market);
-        const detail = keys.map((key) => detailsMap[key]).find(Boolean);
-        const inferredFromDetail = detail ? marketHasPrediction(detail) || hasCachedPredictions(detail) : false;
-
+        const inferred = keys.some((key) => updates[key]);
         return {
           ...market,
-          hasPrediction: marketHasPrediction(market) || inferredFromDetail
+          hasPrediction: marketHasPrediction(market) || inferred
         };
       }));
     }
@@ -200,8 +203,8 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
         })
       );
 
-      // Hydrate hasPrediction from market detail payloads when list-level status is stale.
-      hydrateMarketPredictionSignals(normalizedMarkets);
+      // Probe prediction availability per market to avoid stale list-level hasPrediction values.
+      probePredictionAvailability(normalizedMarkets);
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Unable to load markets. Please try again.');
@@ -238,8 +241,6 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
           };
         })
       );
-
-      hydrateMarketPredictionSignals(normalized);
     } catch (err) {
       if (err instanceof ApiError) {
         setError('Search failed. Please try again.');

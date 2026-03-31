@@ -109,6 +109,9 @@ export const predictionsAPI = {
     if (timeframe) url += `&timeframe=${timeframe}`;
     return apiClient.get(url);
   },
+
+  getApprovedPredictionsForMarket: (marketId, limit = 5, offset = 0) =>
+    apiClient.get(`/api/predictions?marketId=${encodeURIComponent(marketId)}&limit=${limit}&offset=${offset}`),
   
   getPredictionById: (id) =>
     apiClient.get(`/api/predictions/${id}`),
