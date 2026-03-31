@@ -183,3 +183,42 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ── Not Found ───────────────────────────────────────── */
+
+.not-found-page {
+  min-height: 55vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.not-found-card {
+  width: min(560px, 100%);
+  background: var(--color-background-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  text-align: center;
+}
+
+.not-found-card h2 {
+  margin: 0 0 8px;
+  color: var(--color-text-primary);
+}
+
+.not-found-card p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.not-found-card button {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--border-radius-md);
+  background: #378ADD;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}

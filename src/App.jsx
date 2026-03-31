@@ -11,13 +11,18 @@ import AdminPage from './pages/AdminPage';
 import NotificationPage from './pages/NotificationPage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 
+const resolvePageFromLocation = () => {
+  const path = window.location.pathname;
+  const hash = window.location.hash || '';
+
+  if (path === '/verify-email' || hash.startsWith('#verify-email')) return 'verify-email';
+  if (path === '/admin' || hash === '#admin') return 'admin';
+  if (path === '/' || path === '') return 'markets';
+  return 'not-found';
+};
+
 function App() {
-  const [currentPage, setCurrentPage] = useState(() => {
-    const path = window.location.pathname;
-    if (path === '/verify-email' || window.location.hash.startsWith('#verify-email')) return 'verify-email';
-    if (path === '/admin' || window.location.hash === '#admin') return 'admin';
-    return 'markets';
-  });
+  const [currentPage, setCurrentPage] = useState(resolvePageFromLocation);
 
   const [adminAuth, setAdminAuth] = useState(() => {
     const saved = localStorage.getItem('adminAuth');
@@ -39,13 +44,7 @@ function App() {
 
   useEffect(() => {
     const syncRouteAccess = () => {
-      if (window.location.pathname === '/verify-email' || window.location.hash.startsWith('#verify-email')) {
-        setCurrentPage('verify-email');
-        return;
-      }
-      if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
-        setCurrentPage('admin');
-      }
+      setCurrentPage(resolvePageFromLocation());
     };
 
     const onSecretShortcut = (event) => {
@@ -106,6 +105,8 @@ function App() {
         );
       case 'verify-email':
         return <EmailVerificationPage showToast={showToast} />;
+      case 'not-found':
+        return <NotFoundPage onBackToMarkets={() => handleNavigate('markets')} />;
       default:
         return <MarketsPage />;
     }
@@ -135,6 +136,18 @@ function App() {
         {toast && <Toast message={toast.message} type={toast.type} />}
       </div>
     </ErrorBoundary>
+  );
+}
+
+function NotFoundPage({ onBackToMarkets }) {
+  return (
+    <div className="not-found-page">
+      <div className="not-found-card">
+        <h2>Page Not Found</h2>
+        <p>The page you requested does not exist in this app.</p>
+        <button type="button" onClick={onBackToMarkets}>Back to Markets</button>
+      </div>
+    </div>
   );
 }
 
