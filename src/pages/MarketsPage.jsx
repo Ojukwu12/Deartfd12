@@ -124,6 +124,19 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
     .replace(/\s+/g, ' ')
     .trim();
 
+  const isKnownPredictedMarket = (market) => {
+    if (!market) return false;
+
+    const keys = marketKeys(market);
+    const titleKey = normalizeTitle(market.title);
+
+    return (
+      marketHasPrediction(market) ||
+      keys.some((key) => predictionMarketIds.has(key)) ||
+      (titleKey && predictionMarketTitles.has(titleKey))
+    );
+  };
+
   const fetchMarketDetailsWithFallback = async (market) => {
     const keys = marketKeys(market);
     for (const key of keys) {
@@ -489,16 +502,22 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
               </div>
             ) : (
               <>
+                {(() => {
+                  const modalHasPrediction =
+                    isKnownPredictedMarket(selectedMarket) || isKnownPredictedMarket(selectedMarketDetails);
+
+                  return (
+                    <>
                 <p className="market-modal-status">
-                  {marketHasPrediction(selectedMarketDetails || selectedMarket)
+                  {modalHasPrediction
                     ? 'This market has at least one approved prediction.'
-                    : 'No approved prediction is currently available for this market.'}
+                    : 'No approved prediction is currently linked to this market yet.'}
                 </p>
 
                 {detailError && <p className="market-modal-error">{detailError}</p>}
 
                 <div className="market-modal-actions">
-                  {marketHasPrediction(selectedMarketDetails || selectedMarket) && (
+                  {modalHasPrediction && (
                     <button
                       type="button"
                       className="modal-action prediction"
@@ -526,6 +545,9 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
                     Go to Polymarket ↗
                   </button>
                 </div>
+                    </>
+                  );
+                })()}
               </>
             )}
           </div>
