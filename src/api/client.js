@@ -157,6 +157,12 @@ export const notificationsAPI = {
 
 // Admin API
 export const adminAPI = {
+  getPredictions: (status = null, limit = 50, offset = 0, auth) => {
+    let url = `/api/admin/predictions?limit=${limit}&offset=${offset}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+    return apiClient.get(url, auth);
+  },
+
   getPredictionsForModeration: (status = 'pending', limit = 50, offset = 0, auth) =>
     apiClient.get(`/api/admin/predictions/status/${status}?limit=${limit}&offset=${offset}`, auth),
   

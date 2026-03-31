@@ -5,6 +5,7 @@ import './AdminPage.css';
 export default function AdminPage({ adminAuth, showToast }) {
   const [tab, setTab] = useState('pending'); // 'pending', 'dashboard', 'approved'
   const [predictions, setPredictions] = useState([]);
+  const [tabCounts, setTabCounts] = useState({ pending: 0, approved: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -20,16 +21,46 @@ export default function AdminPage({ adminAuth, showToast }) {
     }
   }, [tab]);
 
+  useEffect(() => {
+    const preloadCounts = async () => {
+      try {
+        const [pendingData, approvedData] = await Promise.all([
+          adminAPI.getPredictionsForModeration('pending', 1, 0, adminAuth).catch(() => adminAPI.getPredictions('pending', 1, 0, adminAuth)),
+          adminAPI.getPredictionsForModeration('approved', 1, 0, adminAuth).catch(() => adminAPI.getPredictions('approved', 1, 0, adminAuth))
+        ]);
+
+        setTabCounts({
+          pending: Number(pendingData?.total ?? pendingData?.count ?? 0),
+          approved: Number(approvedData?.total ?? approvedData?.count ?? 0)
+        });
+      } catch {
+        // Ignore preload errors; tab data fetches still run when tab is opened.
+      }
+    };
+
+    preloadCounts();
+  }, [adminAuth]);
+
   const fetchPredictions = async (status) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminAPI.getPredictionsForModeration(status, 100, 0, adminAuth);
-      setPredictions(data.predictions || []);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(`Unable to load ${status} predictions`);
+      let data;
+      try {
+        data = await adminAPI.getPredictionsForModeration(status, 100, 0, adminAuth);
+      } catch {
+        data = await adminAPI.getPredictions(status, 100, 0, adminAuth);
       }
+
+      const items = data?.predictions || [];
+      setPredictions(items);
+      setTabCounts((prev) => ({
+        ...prev,
+        [status]: Number(data?.total ?? data?.count ?? items.length)
+      }));
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.message || `Unable to load ${status} predictions`);
+      else setError(`Unable to load ${status} predictions`);
     } finally {
       setLoading(false);
     }
@@ -127,13 +158,13 @@ export default function AdminPage({ adminAuth, showToast }) {
             className={`admin-tab ${tab === 'pending' ? 'active' : ''}`}
             onClick={() => setTab('pending')}
           >
-            Pending ({predictions.length})
+            Pending ({tabCounts.pending})
           </button>
           <button
             className={`admin-tab ${tab === 'approved' ? 'active' : ''}`}
             onClick={() => setTab('approved')}
           >
-            Approved
+            Approved ({tabCounts.approved})
           </button>
           <button
             className={`admin-tab ${tab === 'dashboard' ? 'active' : ''}`}
