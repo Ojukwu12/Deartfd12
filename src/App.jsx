@@ -173,8 +173,12 @@ function AdminLoginPage({ setAdminAuth, showToast, setCurrentPage }) {
         setLoginError(serverMessage);
         showToast(serverMessage, 'error');
       }
-    } catch {
-      const message = 'Unable to verify admin credentials';
+    } catch (error) {
+      const rawMessage = String(error?.message || '').toLowerCase();
+      const message =
+        rawMessage.includes('failed to fetch') || rawMessage.includes('networkerror')
+          ? 'Admin login blocked by backend CORS. Backend must allow x-admin-key in Access-Control-Allow-Headers.'
+          : 'Unable to verify admin credentials';
       setLoginError(message);
       showToast(message, 'error');
     } finally {
@@ -210,6 +214,7 @@ function AdminLoginPage({ setAdminAuth, showToast, setCurrentPage }) {
         {loginError && <p className="admin-login-hint">{loginError}</p>}
         <p className="admin-login-hint">Enter both credentials required by backend admin routes</p>
         <p className="admin-login-hint">Use `ADMIN_SECRET_KEY` as x-admin-key and `ADMIN_API_KEY` as X-API-Key from backend env.</p>
+        <p className="admin-login-hint">If browser says CORS/Failed to fetch, backend must include x-admin-key in CORS allowed headers.</p>
       </div>
     </div>
   );
