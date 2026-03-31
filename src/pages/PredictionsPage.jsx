@@ -23,7 +23,7 @@ export default function PredictionsPage({ showToast, jumpToMarket }) {
 
     const openMatchingPrediction = async () => {
       try {
-        const data = await predictionsAPI.getApprovedPredictions(250, 0, null);
+        const data = await predictionsAPI.getApprovedPredictions(100, 0, null);
         const list = data?.predictions || [];
         const match = list.find((prediction) => {
           const predictionMarketId = String(prediction.marketId || '').trim();

@@ -178,7 +178,7 @@ export default function MarketsPage({ onOpenPredictionForMarket }) {
       // Backend now enriches hasPrediction, but this fallback covers temporary sync/index delays.
       let fallbackIds = new Set();
       try {
-        const predictionData = await predictionsAPI.getApprovedPredictions(500, 0, null);
+        const predictionData = await predictionsAPI.getApprovedPredictions(100, 0, null);
         const predictions = predictionData?.predictions || [];
         fallbackIds = new Set(
           predictions
