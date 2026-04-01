@@ -178,6 +178,24 @@ export default function AdminPage({ adminAuth, showToast }) {
     }
   };
 
+  const formatDataIssue = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') return value;
+
+    const note = typeof value.note === 'string' ? value.note.trim() : '';
+    const code = typeof value.code === 'string' ? value.code.trim() : '';
+
+    if (note && code) return `${note} (${code})`;
+    if (note) return note;
+    if (code) return code;
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return 'Data issue details available';
+    }
+  };
+
   return (
     <div className="admin-page">
       <div className="admin-header">
@@ -280,6 +298,13 @@ export default function AdminPage({ adminAuth, showToast }) {
                   <div className="pred-reason">
                     <span className="label">Reason:</span>
                     <p>{pred.reason}</p>
+                  </div>
+                )}
+
+                {tab === 'pending' && pred.dataIssue && (
+                  <div className="pred-reason pred-data-issue">
+                    <span className="label">Data Issue:</span>
+                    <p>{formatDataIssue(pred.dataIssue)}</p>
                   </div>
                 )}
 
